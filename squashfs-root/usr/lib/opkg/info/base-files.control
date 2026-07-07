@@ -1,0 +1,9 @@
+Package: base-files
+Version: 157.2-RAX120-V1.2.9.52+r49254
+Depends: libc, libssp, procd, jsonfilter, usign, openssl
+Source: package/base-files
+License: GPL-2.0
+Section: base
+Architecture: ipq
+Installed-Size: 40947
+Description:  This package contains a base filesystem and system scripts for OpenWrt.

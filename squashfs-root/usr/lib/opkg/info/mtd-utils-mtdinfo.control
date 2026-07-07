@@ -1,0 +1,8 @@
+Package: mtd-utils-mtdinfo
+Version: 1.5.0-1
+Depends: libc, libssp, mtd-utils
+Source: package/dni/mtd-utils
+Section: utils
+Architecture: ipq
+Installed-Size: 11305
+Description:  mtdinfo package from mtd-utils

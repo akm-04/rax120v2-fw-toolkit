@@ -1,0 +1,8 @@
+Package: fwcheck
+Version: 1.0.0-1
+Depends: libc, libssp, libpthread, d2, libcrypt0, libssl, libcurl
+Source: package/ntgr/upfwu
+Section: fwcheck
+Architecture: ipq
+Installed-Size: 13655
+Description:  Controlled FW rollout

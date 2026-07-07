@@ -1,0 +1,8 @@
+Package: wlan-common
+Version: 2.5-1
+Depends: libc, libssp
+Source: package/dni/wlan-common
+Section: net
+Architecture: ipq
+Installed-Size: 64735
+Description:  DNI wlan common scripts

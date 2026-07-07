@@ -1,0 +1,2 @@
+/etc/modules.d/46-dnshijack
+/lib/modules/4.4.60/ipt_dnshijack.ko

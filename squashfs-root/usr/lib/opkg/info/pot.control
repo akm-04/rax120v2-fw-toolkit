@@ -1,0 +1,8 @@
+Package: pot
+Version: 4
+Depends: libc, libssp, datalib, lib-dni-common-api
+Source: package/dni/pot
+Section: net
+Architecture: ipq
+Installed-Size: 12469
+Description:  POT

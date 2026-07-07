@@ -1,0 +1,8 @@
+Package: kmod-dni-mtdoops
+Version: 4.4.60+-ipq-
+Depends: kernel (=4.4.60-1-018eada0213162bd65104f3c1334fafe), libgcc, libc
+Source: package/dni/dni-mtdoops
+Section: kernel
+Architecture: ipq
+Installed-Size: 12258
+Description:  MTD Oops/Panic console logger/driver

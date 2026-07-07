@@ -1,0 +1,3 @@
+/sbin/init-gpio
+/sbin/ledcontrol
+/sbin/set_lan_led

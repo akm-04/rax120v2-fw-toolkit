@@ -1,0 +1,8 @@
+Package: kmod-shortcut-fe-drv
+Version: 4.4.60+g-1
+Depends: kernel (=4.4.60-1-018eada0213162bd65104f3c1334fafe), kmod-shortcut-fe
+Source: qca/feeds/shortcut-fe/simulated-driver
+Section: kernel
+Architecture: ipq
+Installed-Size: 5958
+Description:  Simulated sfe driver for ECM

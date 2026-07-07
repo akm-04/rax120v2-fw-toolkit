@@ -1,0 +1,8 @@
+Package: ez-ipupdate
+Version: 3.0.10-1
+Depends: libc, libssp
+Source: package/dni/ez-ipupdate
+Section: net
+Architecture: ipq
+Installed-Size: 20732
+Description:  Dynamic DNS application

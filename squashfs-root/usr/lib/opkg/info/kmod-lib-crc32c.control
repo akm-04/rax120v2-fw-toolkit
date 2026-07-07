@@ -1,0 +1,10 @@
+Package: kmod-lib-crc32c
+Version: 4.4.60-1
+Depends: kernel (=4.4.60-1-018eada0213162bd65104f3c1334fafe), kmod-crypto-crc32c
+Source: package/kernel/linux
+License: GPLv2
+Section: kernel
+Status: unknown hold not-installed
+Architecture: ipq
+Installed-Size: 190
+Description:  Kernel module for CRC32 support

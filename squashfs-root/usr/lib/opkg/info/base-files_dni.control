@@ -1,0 +1,8 @@
+Package: base-files_dni
+Version: 157.2-RAX120-V1.2.9.52+r49254
+Depends: libc, libssp, base-files, libpthread, libstdcpp, openssl
+Source: package/dni/base-files_dni
+Section: base
+Architecture: ipq
+Installed-Size: 3204838
+Description:  This package contains a base filesystem and system scripts for OpenWrt.

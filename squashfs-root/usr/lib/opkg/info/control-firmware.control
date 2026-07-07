@@ -1,0 +1,8 @@
+Package: control-firmware
+Version: 1
+Depends: libc, libssp, fwcheck, d2, datalib
+Source: package/dni/control-firmware
+Section: utils
+Architecture: ipq
+Installed-Size: 6047
+Description:  control-firmware.

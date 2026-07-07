@@ -1,0 +1,10 @@
+Package: uboot-envtools
+Version: 2014.10-2
+Depends: libc, libssp
+Source: package/boot/uboot-envtools
+License: GPL-2.0 GPL-2.0+
+LicenseFiles: Licenses/README
+Section: utils
+Architecture: ipq
+Installed-Size: 12485
+Description:  This package includes tools to read and modify U-Boot bootloader environment.

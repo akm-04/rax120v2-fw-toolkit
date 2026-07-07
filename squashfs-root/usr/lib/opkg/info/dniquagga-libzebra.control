@@ -1,0 +1,11 @@
+Package: dniquagga-libzebra
+Version: 1.1.1-1
+Depends: libc, libssp, dniquagga
+Source: package/dni/dniquagga
+License: GPL-2.0-or-later
+LicenseFiles: COPYING
+Section: dni
+Maintainer: Vasilis Tsiligiannis <acinonyx@openwrt.gr>
+Architecture: ipq
+Installed-Size: 117158
+Description:  zebra library

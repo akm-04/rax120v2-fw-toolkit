@@ -1,0 +1,11 @@
+Package: lxc
+Version: 1.1.3-1
+Depends: libc, libssp
+Source: qca/feeds/packages/utils/lxc
+License: LGPL-2.1+ BSD-2-Clause GPL-2.0
+Section: utils
+Maintainer: Luka Perkov <luka@openwrt.org>
+Architecture: ipq
+Installed-Size: 105
+Description:  LXC is the userspace control package for Linux Containers, a lightweight
+ virtual system mechanism sometimes described as "chroot on steroids".

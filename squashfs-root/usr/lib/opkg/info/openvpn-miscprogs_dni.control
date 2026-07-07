@@ -1,0 +1,8 @@
+Package: openvpn-miscprogs_dni
+Version: 1
+Depends: libc, libssp
+Source: package/dni/openvpn-miscprogs_dni
+Section: net
+Architecture: ipq
+Installed-Size: 2745
+Description:  misc programs for openvpn

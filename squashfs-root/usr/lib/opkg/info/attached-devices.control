@@ -1,0 +1,8 @@
+Package: attached-devices
+Version: 1
+Depends: libc, libssp, datalib, d2, dil, ntgdal, dniutil
+Source: package/dni/attached-devices
+Section: dni
+Architecture: ipq
+Installed-Size: 418021
+Description:  Scanning the attached devices according to NETGEAR's spec.

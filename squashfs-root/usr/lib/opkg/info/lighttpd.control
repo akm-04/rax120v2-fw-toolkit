@@ -1,0 +1,11 @@
+Package: lighttpd
+Version: 1.4.56-1
+Depends: libc, libssp, libopenssl, libpcre, libpthread, datalib, ntgrcrypt
+Source: package/dni/lighttpd
+License: BSD-3c
+LicenseFiles: COPYING
+Section: net
+Maintainer: W. Michael Petullo <mike@flyn.org>
+Architecture: ipq
+Installed-Size: 214623
+Description:  A flexible and lightweight web server

@@ -1,0 +1,9 @@
+Package: libwifisoncfg
+Version: g-1
+Depends: libc, libssp, qca-cfg80211, libhyficommon, libnl
+Source: qca/feeds/qca-lib/libwifisoncfg
+Section: QCA
+Maintainer: Qualcomm Atheros, Inc.
+Architecture: ipq
+Installed-Size: 19201
+Description:  This Package contains the WiFi-SON Configuration layer support

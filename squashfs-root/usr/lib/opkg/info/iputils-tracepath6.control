@@ -1,0 +1,11 @@
+Package: iputils-tracepath6
+Version: 20101006-1
+Depends: libc, libssp
+Source: package/network/utils/iputils
+License: GPL-2.0+
+Section: net
+Maintainer: Jo-Philipp Wich <jow@openwrt.org>
+Architecture: ipq
+Installed-Size: 5464
+Description:  Program tracepath6 from iputils.
+ Traces path to a network host discovering MTU along this path (IPv6).

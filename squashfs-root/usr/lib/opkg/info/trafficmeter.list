@@ -1,0 +1,10 @@
+/sbin/traffic_meter
+/usr/traffic_meter/traffic_meter
+/sbin/cmd_traffic_meter
+/sbin/generate_traffic_meter_conf
+/usr/traffic_meter/last_stop_time
+/usr/traffic_meter/network_status
+/sbin/tfm_led
+/usr/traffic_meter/traffic_statistics
+/usr/traffic_meter/last_conn_time
+/etc/init.d/traffic_meter

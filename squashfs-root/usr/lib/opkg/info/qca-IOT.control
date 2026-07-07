@@ -1,0 +1,8 @@
+Package: qca-IOT
+Version: CNSS_W.QZ.3.0-00110-QZHW4024-2
+Depends: libc, libssp, kmod-tun
+Source: qca/feeds/qca-IOT/qca-iot
+Section: QCA
+Architecture: ipq
+Installed-Size: 2073179
+Description:  This package contains BLE /Zigbee/ Thread binaries for QCA402x

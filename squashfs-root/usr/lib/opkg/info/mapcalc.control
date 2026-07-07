@@ -1,0 +1,8 @@
+Package: mapcalc
+Version: 1
+Depends: libc, libssp, libubox, libubus
+Source: package/dni/mapcalc
+Section: net
+Architecture: ipq
+Installed-Size: 5357
+Description:  IPv6 MAP-E calc tool

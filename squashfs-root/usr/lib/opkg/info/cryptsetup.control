@@ -1,0 +1,12 @@
+Package: cryptsetup
+Version: 1.6.7-1
+Depends: libc, libssp, libblkid, libuuid, libpopt, lvm2, libdevmapper, libgcrypt
+Source: qca/feeds/packages/utils/cryptsetup
+License: GPL-2.0+ LGPL-2.1+
+LicenseFiles: COPYING COPYING.LGPL
+Section: utils
+Maintainer: Daniel Golle <daniel@makrotopia.org>
+Architecture: ipq
+Installed-Size: 78400
+Description:  Cryptsetup-luks
+ linked against libgcrypt

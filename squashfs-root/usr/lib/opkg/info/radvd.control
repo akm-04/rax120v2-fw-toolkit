@@ -1,0 +1,8 @@
+Package: radvd
+Version: 1.5-1
+Depends: libc, libssp, kmod-ipv6
+Source: package/dni/radvd
+Section: dni
+Architecture: ipq
+Installed-Size: 39146
+Description:  IPv6 Routing Advertisement Daemon.

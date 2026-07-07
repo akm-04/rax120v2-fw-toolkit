@@ -1,0 +1,8 @@
+Package: trafficmeter
+Version: 1
+Depends: libc, libssp, datalib
+Source: package/dni/trafficmeter
+Section: utils
+Architecture: ipq
+Installed-Size: 19281
+Description:  Update utility for trx firmware images

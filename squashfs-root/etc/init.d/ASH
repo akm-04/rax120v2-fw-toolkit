@@ -1,0 +1,40 @@
+#!/bin/sh /etc/rc.common
+#START=96
+
+debug_file=/tmp/dal_ash_status.log
+start() {
+    for retry_num in `seq 1 15`
+    do
+        if [ "$(pidof bdbrokerd)" != "" ]; then
+            echo "bdbrokerd is up, call ash start" > /dev/console 
+            echo "[`date '+%Y/%m/%d %T'`]bdbrokerd is up now" >> $debug_file
+        else
+            echo "bdbrokerd is not up, delay 2s" > /dev/console 
+            echo "[`date '+%Y/%m/%d %T'`]bdbrokerd is not up now" >> $debug_file
+            sleep 2
+        fi
+    done
+    
+    d2 -c armorcfg[0].action none 
+
+    echo "[`date '+%Y/%m/%d %T'`]start dal_ash in ASH.init" >> $debug_file
+    /usr/bin/dal_ash 2>/dev/null &
+    /sbin/check_dal_ash_status.sh 2>/dev/null &
+
+}
+
+stop() { 
+    killall check_dal_ash_status.sh
+    killall dal_ash
+    kill -17 1
+    rm /tmp/dal_ash.log
+}
+
+boot() {
+    start
+}
+
+restart() {
+    stop
+    start
+}

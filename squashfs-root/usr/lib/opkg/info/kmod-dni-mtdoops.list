@@ -1,0 +1,15 @@
+/etc/init.d/dni-debug.init
+/sbin/wireless_log.sh
+/sbin/console_log.sh
+/sbin/mirror.sh
+/sbin/capture_packet.sh
+/sbin/basic_log.sh
+/sbin/enable_collect_console_log.sh
+/sbin/save_collect_console_log.sh
+/sbin/dni_ramoops_init.sh
+/sbin/wlandebug.sh
+/sbin/enable_ipv6_ping.sh
+/sbin/debug_dutinfo.sh
+/sbin/debug_functions.sh
+/lib/modules/4.4.60/mtdoops.ko
+/sbin/debug_telnetenable.sh

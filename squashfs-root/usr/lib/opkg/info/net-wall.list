@@ -1,0 +1,5 @@
+/etc/l7_patten.dat
+/etc/scripts/firewall/armor.rule6
+/etc/scripts/firewall-retry.sh
+/usr/sbin/net-wall
+/etc/scripts/firewall.sh

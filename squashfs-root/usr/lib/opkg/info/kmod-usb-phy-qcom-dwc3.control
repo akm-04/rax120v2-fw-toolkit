@@ -1,0 +1,11 @@
+Package: kmod-usb-phy-qcom-dwc3
+Version: 4.4.60-1
+Depends: kernel (=4.4.60-1-018eada0213162bd65104f3c1334fafe), kmod-usb-core
+Source: package/kernel/linux
+License: GPLv2
+Section: kernel
+Status: unknown hold not-installed
+Architecture: ipq
+Installed-Size: 3183
+Description:  This driver provides support for the integrated DesignWare
+ USB3 IP Core within the QCOM SoCs.

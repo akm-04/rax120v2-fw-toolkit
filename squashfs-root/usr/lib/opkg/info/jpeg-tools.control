@@ -1,0 +1,11 @@
+Package: jpeg-tools
+Version: 9a-1
+Depends: libc, libssp, libjpeg
+Source: qca/feeds/packages/libs/libjpeg
+License: IJG
+LicenseFiles: README
+Section: utils
+Maintainer: Jo-Philipp Wich <jow@openwrt.org>
+Architecture: ipq
+Installed-Size: 28335
+Description:  The Independent JPEG Group's JPEG manipulation tools

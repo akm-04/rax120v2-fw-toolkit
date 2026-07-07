@@ -1,0 +1,12 @@
+/usr/sbin/system
+/etc/scripts/firewall/ntgr_sw_api.rule
+/etc/scripts/ntgr_sw_api/app_register.sh
+/etc/scripts/ntgr_sw_api/ntgr_sw_api.sh
+/usr/sbin/app-register
+/usr/sbin/firewall
+/usr/sbin/internet
+/usr/sbin/dlna
+/usr/sbin/ntgr_sw_api_event_notify
+/usr/sbin/api
+/usr/sbin/ntgr_sw_api
+/usr/sbin/nvconfig

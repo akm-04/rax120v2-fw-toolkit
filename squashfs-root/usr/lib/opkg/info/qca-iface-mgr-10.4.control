@@ -1,0 +1,9 @@
+Package: qca-iface-mgr-10.4
+Version: g-1
+Depends: libc, libssp, libpthread, libnl, libwifisoncfg
+Source: qca/feeds/qca/net/qca-iface-mgr-10.4
+Section: QCA
+Maintainer: Qualcomm Atheros
+Architecture: ipq
+Installed-Size: 34717
+Description:  User Space application to manage interfaces

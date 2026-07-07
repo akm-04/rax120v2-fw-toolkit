@@ -1,0 +1,6 @@
+/etc/lighttpd/certs/crtconfig.conf
+/etc/lighttpd/certs/server.pem
+/etc/lighttpd/conf.d/30-rewrite.conf
+/etc/lighttpd/certs/https_cert.sh
+/etc/lighttpd/certs/dhparam.pem
+/usr/lib/lighttpd/mod_rewrite.so

@@ -1,0 +1,4 @@
+/usr/sbin/ubiformat
+/usr/sbin/ubiblock
+/usr/sbin/ubicrc32
+/usr/sbin/ubirename

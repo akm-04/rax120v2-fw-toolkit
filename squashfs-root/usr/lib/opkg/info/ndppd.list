@@ -1,0 +1,3 @@
+/etc/init.d/ndppd.init
+/usr/sbin/ndppd
+/lib/upgrade/keep.d/ndppd

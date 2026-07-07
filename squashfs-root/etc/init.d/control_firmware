@@ -1,0 +1,8 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=96
+boot() {
+	echo "control-firmware will be Running when Internet status is UP !!!" > /dev/console
+		/usr/sbin/boot-notification > /dev/console &
+}

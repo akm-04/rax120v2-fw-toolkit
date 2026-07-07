@@ -1,0 +1,8 @@
+Package: mtd-utils-flash-erase
+Version: 1.5.0-1
+Depends: libc, libssp, mtd-utils
+Source: package/dni/mtd-utils
+Section: utils
+Architecture: ipq
+Installed-Size: 12150
+Description:  flash_erase package from mtd-utils

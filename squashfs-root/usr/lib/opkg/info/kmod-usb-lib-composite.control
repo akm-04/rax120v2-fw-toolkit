@@ -1,0 +1,10 @@
+Package: kmod-usb-lib-composite
+Version: 4.4.60-1
+Depends: kernel (=4.4.60-1-018eada0213162bd65104f3c1334fafe), kmod-usb-gadget, kmod-fs-configfs, kmod-usb-core
+Source: package/kernel/linux
+License: GPLv2
+Section: kernel
+Status: unknown hold not-installed
+Architecture: ipq
+Installed-Size: 19663
+Description:  Lib Composite

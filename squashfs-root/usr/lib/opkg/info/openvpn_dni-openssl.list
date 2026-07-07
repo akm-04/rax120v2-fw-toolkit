@@ -1,0 +1,9 @@
+/lib/upgrade/keep.d/openvpn_dni-openssl
+/etc/openvpn/push_routing_rule
+/etc/init.d/zzprefix-check_cert_files
+/etc/openvpn/vpn-firewall.sh
+/etc/init.d/openvpn
+/usr/sbin/openvpn
+/etc/rc.d/S60openvpn
+/etc/openvpn/download
+/lib/upgrade/keep.d/openvpn

@@ -1,0 +1,10 @@
+Package: kmod-crypto-authenc
+Version: 4.4.60-1
+Depends: kernel (=4.4.60-1-018eada0213162bd65104f3c1334fafe), kmod-crypto-manager, kmod-crypto-core
+Source: package/kernel/linux
+License: GPLv2
+Section: kernel
+Status: unknown hold not-installed
+Architecture: ipq
+Installed-Size: 3067
+Description:  Combined mode wrapper for IPsec

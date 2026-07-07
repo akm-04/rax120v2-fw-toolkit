@@ -1,0 +1,11 @@
+Package: lighttpd-mod-cgi
+Version: 1.4.56-1
+Depends: libc, libssp, lighttpd
+Source: package/dni/lighttpd
+License: BSD-3c
+LicenseFiles: COPYING
+Section: net
+Maintainer: W. Michael Petullo <mike@flyn.org>
+Architecture: ipq
+Installed-Size: 11699
+Description:  CGI module

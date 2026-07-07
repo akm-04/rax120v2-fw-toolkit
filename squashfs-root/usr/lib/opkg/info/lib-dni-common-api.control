@@ -1,0 +1,8 @@
+Package: lib-dni-common-api
+Version: 0.1-1
+Depends: libc, libssp, safeclib
+Source: package/dni/lib-dni-common-api
+Section: libs
+Architecture: ipq
+Installed-Size: 4527
+Description:  This package contains a library for dni common api module.

@@ -1,0 +1,8 @@
+Package: udhcp
+Version: 0.9.8-3
+Depends: libc, libssp
+Source: package/dni/udhcp
+Section: dni
+Architecture: ipq
+Installed-Size: 40476
+Description:  This package contains udhcp Server and Client.

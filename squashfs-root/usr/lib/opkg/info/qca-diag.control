@@ -1,0 +1,8 @@
+Package: qca-diag
+Version: g-1
+Depends: libc, libssp, libpthread
+Source: qca/feeds/qca-platform-utils/qca-diag
+Section: QCA
+Architecture: ipq
+Installed-Size: 55141
+Description:  QCA Linux diag software

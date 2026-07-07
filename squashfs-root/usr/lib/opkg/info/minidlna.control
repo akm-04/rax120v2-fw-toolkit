@@ -1,0 +1,12 @@
+Package: minidlna
+Version: 1.3.0-1
+Depends: libc, libssp, libpthread, libexif, libjpeg, libsqlite3, libffmpeg, libid3tag, libflac, libvorbis, libavahi-client
+Source: package/dni/minidlna
+License: GPL-2.0-or-later BSD-3-Clause
+LicenseFiles: COPYING LICENCE.miniupnpd
+Section: multimedia
+Require-User: minidlna:minidlna
+Architecture: ipq
+Installed-Size: 142620
+Description:  MiniDLNA (aka ReadyDLNA) is server software with the aim of
+ being fully compliant with DLNA/UPnP-AV clients.

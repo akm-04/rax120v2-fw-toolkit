@@ -1,0 +1,8 @@
+Package: factory-tools
+Version: 1
+Depends: libc, libssp, datalib
+Source: package/dni/factory-tools
+Section: dni
+Architecture: ipq
+Installed-Size: 14104
+Description:  This package contains some utility useful for DNI factory to test the product

@@ -1,0 +1,8 @@
+Package: kmod-dni_enet
+Version: 4.4.60-1
+Depends: kernel (=4.4.60-1-018eada0213162bd65104f3c1334fafe)
+Source: package/dni/kmod-dni_enet
+Section: kernel
+Architecture: ipq
+Installed-Size: 2482
+Description:  Kernel driver for NSS gmac

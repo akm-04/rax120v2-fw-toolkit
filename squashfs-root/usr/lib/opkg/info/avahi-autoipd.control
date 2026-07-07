@@ -1,0 +1,25 @@
+Package: avahi-autoipd
+Version: 0.8-7
+Depends: libc, libssp, libdaemon
+Source: qca/feeds/packages/libs/avahi
+License: LGPL-2.1-or-later
+LicenseFiles: LICENSE
+Section: net
+Maintainer: Ted Hess <thess@kitschensync.net>
+Architecture: ipq
+Installed-Size: 14434
+Description:  Avahi is an mDNS/DNS-SD (aka RendezVous/Bonjour/ZeroConf)
+ implementation (library). It facilitates
+ service discovery on a local network -- this means that
+ you can plug your laptop or computer into a network and
+ instantly be able to view other people who you can chat with,
+ find printers to print to or find files being shared.
+ This kind of technology is already found in MacOS X
+ (branded 'Rendezvous', 'Bonjour' and sometimes 'ZeroConf')
+ and is very convenient.
+ .
+ This package implements IPv4LL, "Dynamic Configuration of IPv4 Link-Local
+ Addresses" (IETF RFC3927), a protocol for automatic IP address configuration
+ from the link-local 169.254.0.0/16 range without the need for a central
+ server. It is primarily intended to be used in ad-hoc networks which lack a
+ DHCP server.

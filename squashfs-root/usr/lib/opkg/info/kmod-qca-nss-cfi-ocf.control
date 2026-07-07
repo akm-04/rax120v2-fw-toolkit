@@ -1,0 +1,8 @@
+Package: kmod-qca-nss-cfi-ocf
+Version: 4.4.60+g-2
+Depends: kernel (=4.4.60-1-018eada0213162bd65104f3c1334fafe), kmod-qca-nss-crypto, kmod-crypto-ocf
+Source: qca/feeds/nss-host/qca-nss-cfi
+Section: kernel
+Architecture: ipq
+Installed-Size: 4402
+Description:  Kernel driver for NSS cfi

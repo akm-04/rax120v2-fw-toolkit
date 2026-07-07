@@ -1,0 +1,10 @@
+Package: kmod-tun
+Version: 4.4.60-1
+Depends: kernel (=4.4.60-1-018eada0213162bd65104f3c1334fafe)
+Source: package/kernel/linux
+License: GPLv2
+Section: kernel
+Status: unknown hold not-installed
+Architecture: ipq
+Installed-Size: 12080
+Description:  Kernel support for the TUN/TAP tunneling device

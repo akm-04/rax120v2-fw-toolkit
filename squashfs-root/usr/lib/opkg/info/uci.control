@@ -1,0 +1,10 @@
+Package: uci
+Version: 2015-08-27.1-1
+Depends: libc, libssp, libuci
+Source: package/system/uci
+License: LGPL-2.1
+Section: base
+Maintainer: Felix Fietkau <nbd@openwrt.org>
+Architecture: ipq
+Installed-Size: 7595
+Description:  Utility for the Unified Configuration Interface (UCI)

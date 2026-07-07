@@ -1,0 +1,9 @@
+Package: qca-nss-fw-hk-retail
+Version: 22-1
+Depends: libc, libssp
+Provides: qca-nss-fw-hk
+Source: qca/feeds/nss/qca-nss-fw-hk-retail
+Section: kernel
+Architecture: ipq
+Installed-Size: 334947
+Description:  This package contains the NSS firmwares (retail) for QCA chipset

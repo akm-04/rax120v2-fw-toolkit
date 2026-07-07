@@ -1,0 +1,10 @@
+Package: libintl-full
+Version: 0.19.6-2
+Depends: libc, libssp, libpthread, librt
+Source: package/libs/gettext-full
+License: GPL-3.0+
+Section: libs
+Maintainer: Jo-Philipp Wich <jow@openwrt.org>
+Architecture: ipq
+Installed-Size: 15489
+Description:  GNU Internationalization library

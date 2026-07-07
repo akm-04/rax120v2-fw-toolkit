@@ -1,0 +1,8 @@
+Package: kmod-qca-nss-drv
+Version: 4.4.60+g-2
+Depends: kernel (=4.4.60-1-018eada0213162bd65104f3c1334fafe), kmod-qca-nss-dp
+Source: qca/feeds/nss-host/qca-nss-drv
+Section: kernel
+Architecture: ipq
+Installed-Size: 233097
+Description:  Kernel driver for NSS (core driver)

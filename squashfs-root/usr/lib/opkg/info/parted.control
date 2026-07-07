@@ -1,0 +1,9 @@
+Package: parted
+Version: 3.2-1
+Depends: libc, libssp, libblkid, libdevmapper, libuuid
+Source: package/dni/parted
+Section: utils
+Architecture: ipq
+Installed-Size: 147700
+Description:  parted Partition editor
+ http://www.gnu.org/software/parted/index.shtml

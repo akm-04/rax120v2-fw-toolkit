@@ -1,0 +1,21 @@
+#!/bin/sh /etc/rc.common
+START=99
+
+start() {
+	potd
+	netconn.sh &
+}
+
+boot() {
+	start
+}
+
+stop(){
+	killall potd
+	kill -9 `ps | grep netconn.sh | grep -v grep | awk '{print $1}'`
+}
+
+restart(){
+	stop
+	start
+}

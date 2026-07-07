@@ -1,0 +1,10 @@
+Package: kmod-ata-ahci-platform
+Version: 4.4.60-1
+Depends: kernel (=4.4.60-1-018eada0213162bd65104f3c1334fafe), kmod-ata-core, kmod-ata-ahci
+Source: package/kernel/linux
+License: GPLv2
+Section: kernel
+Status: unknown hold not-installed
+Architecture: ipq
+Installed-Size: 5680
+Description:  Platform support for AHCI Serial ATA controllers

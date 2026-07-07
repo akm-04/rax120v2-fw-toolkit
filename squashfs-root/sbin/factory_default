@@ -1,0 +1,16 @@
+#!/bin/sh
+tmp_uboot=`/bin/config get uboot_nosmmu`
+killall traffic_meter
+sleep 2
+echo "[`date '+%Y/%m/%d %T'`]factory_default, remove all files" >> /data/dni/armor_debug
+rm -rf /opt/bitdefender/*
+rm -rf /tmp/dal/*
+artmtd -w nmrp 1
+/bin/sync
+umount /tmp/dal
+/sbin/Nencmgr reset
+config default
+if [ "x$tmp_uboot" = "x1" ];then
+	/bin/config set uboot_nosmmu=1
+	/bin/config commit
+fi

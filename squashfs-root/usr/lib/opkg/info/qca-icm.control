@@ -1,0 +1,9 @@
+Package: qca-icm
+Version: g-1
+Depends: libc, libssp, kmod-qca-wifi, libpthread, qca-spectral, libnl
+Source: qca/feeds/qca/utils/qca-icm
+Section: QCA
+Maintainer: Qualcomm Atheros
+Architecture: ipq
+Installed-Size: 82021
+Description:  QCA Intelligent channel manager

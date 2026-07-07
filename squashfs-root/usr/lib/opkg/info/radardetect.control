@@ -1,0 +1,8 @@
+Package: radardetect
+Version: 1
+Depends: libc, libssp
+Source: package/dni/radardetect
+Section: net
+Architecture: ipq
+Installed-Size: 5881
+Description:  timer tool for DFS channels

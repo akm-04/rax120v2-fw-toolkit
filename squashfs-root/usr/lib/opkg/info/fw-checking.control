@@ -1,0 +1,8 @@
+Package: fw-checking
+Version: 1
+Depends: libc, libssp, datalib
+Source: package/dni/fw-checking
+Section: net
+Architecture: ipq
+Installed-Size: 5214
+Description:  fw-checking

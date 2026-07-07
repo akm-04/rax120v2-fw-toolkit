@@ -1,0 +1,8 @@
+Package: aws-iot
+Version: 36.0-36
+Depends: libc, libssp, datalib, libcurl, libjson-c
+Source: package/dni/aws-iot
+Section: utils
+Architecture: ipq
+Installed-Size: 19015
+Description:  The AWS IoT to Publish Topic

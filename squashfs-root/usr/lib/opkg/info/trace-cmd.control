@@ -1,0 +1,9 @@
+Package: trace-cmd
+Version: v2.4.2-1
+Depends: libc, libssp
+Source: package/devel/trace-cmd
+License: GPL-2.0
+Section: devel
+Architecture: ipq
+Installed-Size: 96681
+Description:  Linux trace command line utility

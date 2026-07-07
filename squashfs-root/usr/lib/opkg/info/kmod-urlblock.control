@@ -1,0 +1,8 @@
+Package: kmod-urlblock
+Version: 4.4.60-ipq-1
+Depends: kernel (=4.4.60-1-018eada0213162bd65104f3c1334fafe), kmod-nf-conntrack, kmod-nf-nat
+Source: package/dni/kmod-urlblock
+Section: kernel
+Architecture: ipq
+Installed-Size: 2416
+Description:  DNI URL Block firewall module

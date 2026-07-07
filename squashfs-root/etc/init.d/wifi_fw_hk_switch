@@ -1,0 +1,36 @@
+#!/bin/sh /etc/rc.common
+
+START=00
+STOP=95
+
+boot() {
+    local is_hk_board
+    local hk_major_version
+    local hk_version_dir
+
+    is_hk_board=$(grep -w  "IPQ807x" /proc/device-tree/model |
+                  awk -F: '{print $1}')
+    if [ ! "$is_hk_board" ]; then
+        return
+    fi
+
+    hk_major_version=$(hexdump -n 1 -e '/1 "%d\n"' \
+                       /proc/device-tree/soc_version_major)
+    if [ "$hk_major_version" = "1" ]; then
+        hk_version_dir="HK1.2"
+    else
+        hk_version_dir="HK2.0"
+    fi
+
+    cd /lib/firmware/IPQ8074/ && {
+        if [ -d "$hk_version_dir" ]; then
+            ln -sf "$hk_version_dir"/* .;
+        fi;
+    }
+
+    cd /vendor/firmware/ && {
+        if [ -d "$hk_version_dir" ]; then
+            ln -sf "$hk_version_dir"/* .;
+        fi;
+    }
+}

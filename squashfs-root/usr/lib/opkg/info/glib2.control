@@ -1,0 +1,9 @@
+Package: glib2
+Version: 2.44.1-1
+Depends: libc, libssp, zlib, libpthread, libffi, libattr
+Source: qca/feeds/packages/libs/glib2
+Section: libs
+Maintainer: Peter Wagner <tripolar@gmx.at>
+Architecture: ipq
+Installed-Size: 805623
+Description:  The GLib library of C routines

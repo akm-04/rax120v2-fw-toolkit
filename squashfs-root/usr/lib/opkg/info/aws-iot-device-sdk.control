@@ -1,0 +1,8 @@
+Package: aws-iot-device-sdk
+Version: 1.0-1
+Depends: libc, libssp, libpthread
+Source: package/dni/aws-iot-device-sdk
+Section: utils
+Architecture: ipq
+Installed-Size: 105
+Description:  The AWS IoT Device SDK for Embedded C

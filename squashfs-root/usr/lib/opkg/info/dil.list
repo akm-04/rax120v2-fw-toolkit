@@ -1,0 +1,12 @@
+/etc/init.d/dil
+/etc/init.d/create_cronjob.init
+/etc/dil/file1.txt
+/usr/lib/libdillib.so
+/usr/bin/diltest
+/etc/dil/file2.txt
+/usr/bin/seal_randcron
+/usr/bin/trigger_event
+/usr/bin/seal_randinit
+/etc/init.d/dilboot
+/usr/bin/fing_dil
+/usr/bin/jsontest

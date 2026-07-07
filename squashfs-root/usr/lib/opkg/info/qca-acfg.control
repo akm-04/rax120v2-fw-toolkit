@@ -1,0 +1,11 @@
+Package: qca-acfg
+Version: g-1
+Depends: libc, libssp, libgcc, wireless-tools, librt, iproute2, kmod-cfg80211-linux, libxml2, libnl, qca-cfg80211
+Source: qca/feeds/qca/net/qca-acfg
+Section: QCA
+Maintainer: Qualcomm Atheros
+Architecture: ipq
+Installed-Size: 72246
+Description:  QCA configuration utility provides a set of library
+ API's through which user applications can configure
+ and register events for wifi driver and hostap

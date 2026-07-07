@@ -1,0 +1,11 @@
+Package: dniquagga-vtysh
+Version: 1.1.1-1
+Depends: libc, libssp, dniquagga, dniquagga-libzebra, libreadline, libncurses
+Source: package/dni/dniquagga
+License: GPL-2.0-or-later
+LicenseFiles: COPYING
+Section: dni
+Maintainer: Vasilis Tsiligiannis <acinonyx@openwrt.gr>
+Architecture: ipq
+Installed-Size: 185297
+Description:  integrated shell for dniquagga routing software

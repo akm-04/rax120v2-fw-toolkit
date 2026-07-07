@@ -1,0 +1,9 @@
+Package: kmod-qca-nss-ecm-premium
+Version: 4.4.60+g-1
+Depends: kernel (=4.4.60-1-018eada0213162bd65104f3c1334fafe), kmod-qca-nss-drv, iptables-mod-extra, kmod-ipt-conntrack, kmod-pppoe, kmod-qca-hyfi-bridge, kmod-qca-mcs, kmod-nat46, kmod-l2tp, kmod-pppol2tp, kmod-pptp, kmod-shortcut-fe-drv, kmod-bonding
+Provides: kmod-qca-nss-ecm
+Source: qca/feeds/nss-host/qca-nss-ecm
+Section: kernel
+Architecture: ipq
+Installed-Size: 313895
+Description:  QCA NSS Enhanced Connection Manager (ECM) (with premium features)

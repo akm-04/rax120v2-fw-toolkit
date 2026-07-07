@@ -1,0 +1,8 @@
+Package: dni-ripd
+Version: 0.01-1
+Depends: libc, libssp, datalib
+Source: package/dni/dni-ripd
+Section: dni
+Architecture: ipq
+Installed-Size: 13520
+Description:  ripd

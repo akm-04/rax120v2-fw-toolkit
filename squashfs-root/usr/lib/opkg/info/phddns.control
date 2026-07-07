@@ -1,0 +1,8 @@
+Package: phddns
+Version: 1
+Depends: libc, libssp, datalib
+Source: package/dni/phddns
+Section: dni
+Architecture: ipq
+Installed-Size: 19777
+Description:  Oray DDNS utility.

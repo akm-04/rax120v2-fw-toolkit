@@ -1,0 +1,8 @@
+Package: qca-time-services
+Version: g-1
+Depends: libc, libssp, libpthread, qca-qmi-framework
+Source: qca/feeds/qca-platform-utils/qca-time-services
+Section: QCA
+Architecture: ipq
+Installed-Size: 9985
+Description:  QCA Time Services software

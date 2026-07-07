@@ -1,0 +1,7 @@
+DISTRIB_ID='OpenWrt'
+DISTRIB_RELEASE='Chaos Calmer'
+DISTRIB_REVISION='RAX120-V1.2.9.52+r49254'
+DISTRIB_CODENAME='chaos_calmer'
+DISTRIB_TARGET='ipq/ipq807x_64'
+DISTRIB_DESCRIPTION='OpenWrt Chaos Calmer 15.05.1'
+DISTRIB_TAINTS='no-all busybox override'

@@ -1,0 +1,4 @@
+/lib/modules/4.4.60/ahci_platform.ko
+/etc/modules.d/40-ata-ahci-platform
+/etc/modules-boot.d/40-ata-ahci-platform
+/lib/modules/4.4.60/libahci_platform.ko

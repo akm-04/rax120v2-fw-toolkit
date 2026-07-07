@@ -1,0 +1,8 @@
+Package: mtd-utils-ubimkvol
+Version: 1.5.0-1
+Depends: libc, libssp, mtd-utils
+Source: package/dni/mtd-utils
+Section: utils
+Architecture: ipq
+Installed-Size: 9169
+Description:  ubimkvol package from mtd-utils

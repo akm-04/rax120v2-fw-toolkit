@@ -1,0 +1,8 @@
+Package: kmod-ipv6-cone
+Version: 4.4.60-1
+Depends: kernel (=4.4.60-1-018eada0213162bd65104f3c1334fafe)
+Source: package/dni/kmod-ipv6-cone
+Section: kernel
+Architecture: ipq
+Installed-Size: 1840
+Description:  IPv6 CONE linux kernel module

@@ -1,0 +1,4 @@
+/etc/init.d/bst
+/usr/bin/bsttest
+/usr/bin/bst_daemon
+/usr/lib/libd2bst.so

@@ -1,0 +1,8 @@
+Package: mtd-utils-nandtest
+Version: 1.5.0-1
+Depends: libc, libssp, mtd-utils
+Source: package/dni/mtd-utils
+Section: utils
+Architecture: ipq
+Installed-Size: 4330
+Description:  nandtest package from mtd-utils

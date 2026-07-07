@@ -1,0 +1,8 @@
+Package: ppp-nas
+Version: 1
+Depends: libc, libssp, datalib, ipp
+Source: package/dni/ppp-nas
+Section: dni
+Architecture: ipq
+Installed-Size: 7107
+Description:  PPP tools for controlling Multi-PPPoE

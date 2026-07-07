@@ -1,0 +1,4 @@
+/lib/modules/4.4.60/qca-nss-ipsecmgr.ko
+/etc/init.d/qca-nss-ipsec
+/etc/modules.d/60-qca-nss-drv-ipsecmgr
+/lib/modules/4.4.60/qca-nss-ipsec-klips.ko

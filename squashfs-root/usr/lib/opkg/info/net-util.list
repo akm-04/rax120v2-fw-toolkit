@@ -1,0 +1,10 @@
+/sbin/cmdsched_wlan_status
+/sbin/ipconflict
+/sbin/cmdsched
+/sbin/rs_send
+/sbin/net-util
+/usr/sbin/sched_block.sh
+/sbin/cmdroute
+/sbin/daemonv6
+/sbin/apsched
+/sbin/detwanv6

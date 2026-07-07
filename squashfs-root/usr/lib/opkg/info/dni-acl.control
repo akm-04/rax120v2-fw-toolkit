@@ -1,0 +1,8 @@
+Package: dni-acl
+Version: 1
+Depends: libc, libssp, datalib
+Source: package/dni/dni-acl
+Section: dni
+Architecture: ipq
+Installed-Size: 14618
+Description:  Manage ACL.

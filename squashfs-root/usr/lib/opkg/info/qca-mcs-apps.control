@@ -1,0 +1,9 @@
+Package: qca-mcs-apps
+Version: g-1
+Depends: libc, libssp, kmod-qca-mcs, libhyficommon, libpthread
+Source: qca/feeds/qca-mcs/qca-mcs-apps
+Section: QCA
+Maintainer: Qualcomm Atheros
+Architecture: ipq
+Installed-Size: 35921
+Description:  This package installs the IGMP/MLD snooping daemon and tools

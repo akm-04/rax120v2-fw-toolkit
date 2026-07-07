@@ -1,0 +1,8 @@
+Package: ntgrcrypt
+Version: 1.0-1
+Depends: libc, libssp
+Source: package/dni/ntgrcrypt
+Section: utils
+Architecture: ipq
+Installed-Size: 15561
+Description:  ntgrcrypt for security sotrage libntgrcrypt.so

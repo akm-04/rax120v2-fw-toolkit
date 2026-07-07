@@ -1,0 +1,9 @@
+Package: qmsct_client
+Version: g-1
+Depends: libc, libssp
+Source: qca/feeds/qca/utils/qmsct_client
+Section: QCA
+Maintainer: Qualcomm Atheros
+Architecture: ipq
+Installed-Size: 4584
+Description:  QCA qmsct_client utils

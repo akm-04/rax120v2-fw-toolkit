@@ -1,0 +1,8 @@
+Package: qca-qmi-framework
+Version: g-1
+Depends: libc, libssp, libpthread
+Source: qca/feeds/qca-platform-utils/qca-qmi-framework
+Section: QCA
+Architecture: ipq
+Installed-Size: 24018
+Description:  QCA Linux QMI framework software
