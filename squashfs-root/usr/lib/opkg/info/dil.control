@@ -1,8 +1,0 @@
-Package: dil
-Version: 0.1.0-1
-Depends: libc, libssp, libpthread, librt, d2, libcrypt0, libssl, libcurl, ld2dynlog
-Source: package/ntgr/dil
-Section: dil
-Architecture: ipq
-Installed-Size: 88098
-Description:  Netgear Data Abstraction Layer 2

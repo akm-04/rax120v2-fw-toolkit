@@ -1,8 +1,0 @@
-Package: disktype
-Version: 1
-Depends: libc, libssp
-Source: package/dni/disktype
-Section: utils
-Architecture: ipq
-Installed-Size: 8132
-Description:  disktype is used to detect the 200M EFI partition

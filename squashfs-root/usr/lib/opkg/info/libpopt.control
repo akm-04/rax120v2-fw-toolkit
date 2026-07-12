@@ -1,9 +1,0 @@
-Package: libpopt
-Version: 1.16-1
-Depends: libc, libssp
-Source: package/libs/popt
-License: MIT
-Section: libs
-Architecture: ipq
-Installed-Size: 17611
-Description:  A command line option parsing library

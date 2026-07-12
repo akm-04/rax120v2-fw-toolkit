@@ -1,8 +1,0 @@
-Package: bridge-mode
-Version: 1
-Depends: libc, libssp
-Source: package/dni/bridge-mode
-Section: dni
-Architecture: ipq
-Installed-Size: 2243
-Description:  For bridge-mode

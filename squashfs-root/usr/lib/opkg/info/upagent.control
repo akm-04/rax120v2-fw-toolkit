@@ -1,8 +1,0 @@
-Package: upagent
-Version: 1.0.0-1
-Depends: libc, libssp, libpthread, d2, libcrypt0, libssl, libcurl, ld2dynlog
-Source: package/ntgr/upagent
-Section: upagent
-Architecture: ipq
-Installed-Size: 53944
-Description:  UpAgent for Orbi

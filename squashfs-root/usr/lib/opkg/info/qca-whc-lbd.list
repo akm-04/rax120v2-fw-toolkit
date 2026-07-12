@@ -1,6 +1,0 @@
-/etc/config/lbd
-/etc/init.d/lbd
-/usr/lib/liblbcmnlibs.so
-/lib/functions/lbd-config.sh
-/usr/sbin/lbd
-/usr/sbin/lbt

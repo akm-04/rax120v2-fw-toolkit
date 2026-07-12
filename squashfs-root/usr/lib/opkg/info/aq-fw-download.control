@@ -1,8 +1,0 @@
-Package: aq-fw-download
-Version: 1.0-1
-Depends: libc, libssp
-Source: qca/feeds/nss/aq-fw-download
-Section: QCA
-Architecture: ipq
-Installed-Size: 176187
-Description:  Aquantia FW downloader utitlity

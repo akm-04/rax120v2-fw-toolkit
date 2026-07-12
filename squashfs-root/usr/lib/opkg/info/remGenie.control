@@ -1,8 +1,0 @@
-Package: remGenie
-Version: 3.2.8-1
-Depends: libc, libssp, libpthread, curl, libopenssl, d2, datalib
-Source: package/ntgr/remGenie
-Section: arlo
-Architecture: ipq
-Installed-Size: 1644705
-Description:  Netgear Remote Genie

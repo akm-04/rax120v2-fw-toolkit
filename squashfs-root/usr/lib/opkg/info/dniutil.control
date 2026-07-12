@@ -1,8 +1,0 @@
-Package: dniutil
-Version: 1.0-1
-Depends: libc, libssp, datalib
-Source: package/dni/dniutil
-Section: utils
-Architecture: ipq
-Installed-Size: 2811
-Description:  DNI common function library.

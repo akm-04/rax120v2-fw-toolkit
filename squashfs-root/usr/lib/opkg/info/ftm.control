@@ -1,9 +1,0 @@
-Package: ftm
-Version: g-1
-Depends: libc, libssp, libnl, libtcmd, qca-diag, librt, qca-IOT
-Source: qca/feeds/qca/utils/ftm
-Section: QCA
-Maintainer: Qualcomm Atheros
-Architecture: ipq
-Installed-Size: 13909
-Description:  QCA ftm utils

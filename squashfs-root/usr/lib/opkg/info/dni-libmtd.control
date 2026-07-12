@@ -1,8 +1,0 @@
-Package: dni-libmtd
-Version: 1-1
-Depends: libc, libssp
-Source: package/dni/dni-libmtd
-Section: utils
-Architecture: ipq
-Installed-Size: 13978
-Description:  This package contains an utility for configuring Home Router.

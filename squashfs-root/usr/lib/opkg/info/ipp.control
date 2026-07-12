@@ -1,8 +1,0 @@
-Package: ipp
-Version: 1
-Depends: libc, libssp
-Source: package/dni/ipp
-Section: dni
-Architecture: ipq
-Installed-Size: 7315
-Description:  IP setting tools for Home Router

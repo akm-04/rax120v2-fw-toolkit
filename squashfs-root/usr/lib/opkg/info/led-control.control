@@ -1,8 +1,0 @@
-Package: led-control
-Version: 1
-Depends: libc, libssp
-Source: package/dni/led-control
-Section: utils
-Architecture: ipq
-Installed-Size: 3243
-Description:  Update utility for LED control

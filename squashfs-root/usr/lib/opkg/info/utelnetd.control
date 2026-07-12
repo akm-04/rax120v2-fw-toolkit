@@ -1,8 +1,0 @@
-Package: utelnetd
-Version: 0.1.9-1
-Depends: libc, libssp
-Source: package/dni/utelnetd
-Section: net
-Architecture: ipq
-Installed-Size: 5539
-Description:  utelnetd for CLI

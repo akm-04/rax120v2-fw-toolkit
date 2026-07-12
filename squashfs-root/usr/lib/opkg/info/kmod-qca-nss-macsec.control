@@ -1,8 +1,0 @@
-Package: kmod-qca-nss-macsec
-Version: 4.4.60+g-1
-Depends: kernel (=4.4.60-1-018eada0213162bd65104f3c1334fafe), libpthread, libc
-Source: qca/feeds/nss-host/qca-nss-macsec
-Section: kernel
-Architecture: ipq
-Installed-Size: 95651
-Description:  Kernel driver for NSS macsec

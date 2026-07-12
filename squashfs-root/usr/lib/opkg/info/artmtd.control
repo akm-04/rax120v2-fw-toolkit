@@ -1,8 +1,0 @@
-Package: artmtd
-Version: 1
-Depends: libc, libssp, datalib
-Source: package/dni/artmtd
-Section: utils
-Architecture: ipq
-Installed-Size: 9668
-Description:  Read mac , wpspin, serialnumber and etc from art data

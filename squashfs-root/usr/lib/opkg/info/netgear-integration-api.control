@@ -1,8 +1,0 @@
-Package: netgear-integration-api
-Version: 1
-Depends: libc, libssp, datalib
-Source: package/dni/netgear-integration-api
-Section: dni
-Architecture: ipq
-Installed-Size: 9334
-Description:  Netgear integration API

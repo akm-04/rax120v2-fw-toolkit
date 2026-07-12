@@ -1,9 +1,0 @@
-Package: qca-spectral
-Version: g-1
-Depends: libc, libssp, libpthread, libnl, qca-cfg80211
-Source: qca/feeds/qca/utils/qca-spectral
-Section: QCA
-Maintainer: Qualcomm Atheros
-Architecture: ipq
-Installed-Size: 15359
-Description:  QCA Spectral Analysis

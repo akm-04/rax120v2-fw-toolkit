@@ -1,8 +1,0 @@
-Package: kmod-dnisip
-Version: 4.4.60-ipq-1
-Depends: kernel (=4.4.60-1-018eada0213162bd65104f3c1334fafe), kmod-nf-conntrack, kmod-nf-nat, kmod-nf-nathelper-extra, nf_conntrack_sip
-Source: package/dni/kmod-dnisip
-Section: kernel
-Architecture: ipq
-Installed-Size: 15517
-Description:  DNI SIP ALG

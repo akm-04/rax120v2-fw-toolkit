@@ -1,8 +1,0 @@
-Package: dni-bond
-Version: 1
-Depends: libc, libssp
-Source: package/dni/dni-bond
-Section: utils
-Architecture: ipq
-Installed-Size: 3224
-Description:  It is used for R7800 bonding to hardware setting

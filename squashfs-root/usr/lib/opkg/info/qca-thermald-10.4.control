@@ -1,9 +1,0 @@
-Package: qca-thermald-10.4
-Version: g-1
-Depends: libc, libssp, libpthread
-Source: qca/feeds/qca/utils/qca-thermald-10.4
-Section: QCA
-Maintainer: Qualcomm Atheros
-Architecture: ipq
-Installed-Size: 18465
-Description:  This package is IPQ Thermal Mitigation daemon.

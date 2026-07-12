@@ -1,8 +1,0 @@
-Package: kmod-qca-nss-drv-ipsecmgr
-Version: 4.4.60+g-2
-Depends: kernel (=4.4.60-1-018eada0213162bd65104f3c1334fafe), kmod-qca-nss-drv, kmod-qca-nss-ecm, kmod-qca-nss-cfi-cryptoapi, kmod-qca-nss-cfi-ocf
-Source: qca/feeds/nss-host/qca-nss-clients
-Section: kernel
-Architecture: ipq
-Installed-Size: 28639
-Description:  Kernel driver for NSS (ipsec manager) - ipsecmgr

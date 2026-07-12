@@ -1,8 +1,0 @@
-Package: bst
-Version: 0.1.0-1
-Depends: libc, libssp, libpthread, librt, d2, libcrypt0, libssl, libcurl, ld2dynlog
-Source: package/ntgr/bst
-Section: bst
-Architecture: ipq
-Installed-Size: 17773
-Description:  Netgear Data Abstraction Layer 2

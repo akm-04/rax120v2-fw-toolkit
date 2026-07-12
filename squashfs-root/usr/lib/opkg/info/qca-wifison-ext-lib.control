@@ -1,9 +1,0 @@
-Package: qca-wifison-ext-lib
-Version: g-1
-Depends: libc, libssp, libnl
-Source: qca/feeds/qca-lib/qca-wifison-ext-lib
-Section: QCA
-Maintainer: Qualcomm Atheros, Inc.
-Architecture: ipq
-Installed-Size: 11564
-Description:  This Package contains the Wifison Event Functionality Library

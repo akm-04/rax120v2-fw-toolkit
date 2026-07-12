@@ -1,6 +1,0 @@
-/sbin/Nencmgr
-/etc/init.d/ntgrcrypt
-/usr/lib/libntgrcrypt.so
-/sbin/ntgrcryptwd
-/usr/share/deif/deif.list
-/usr/share/deif/deif.key

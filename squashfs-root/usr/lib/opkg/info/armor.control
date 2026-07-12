@@ -1,8 +1,0 @@
-Package: armor
-Version: 1
-Depends: libc, libssp, libpthread
-Source: package/dni/armor
-Section: opt
-Architecture: ipq
-Installed-Size: 9049827
-Description:  armor and bitdefender related files

@@ -1,8 +1,0 @@
-Package: dnidnsmasq
-Version: 2.78-1
-Depends: libc, libssp, datalib
-Source: package/dni/dnidnsmasq
-Section: net
-Architecture: ipq
-Installed-Size: 132054
-Description:  It is intended to provide coupled DNS and DHCP service to a LAN.

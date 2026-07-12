@@ -1,8 +1,0 @@
-Package: net-cgi
-Version: 1
-Depends: libc, libssp, libcurl, libiconv-full, datalib, libpthread, ntgrcrypt, d2, dil, dniutil, libjson-c
-Source: package/dni/net-cgi
-Section: utils
-Architecture: ipq
-Installed-Size: 13430889
-Description:  The mini_httpd CGI interface

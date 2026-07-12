@@ -1,8 +1,0 @@
-Package: mtd-utils
-Version: 1.5.0-1
-Depends: libc, libssp
-Source: package/dni/mtd-utils
-Section: utils
-Architecture: ipq
-Installed-Size: 105
-Description:  Utilities for manipulating memory technology devices.

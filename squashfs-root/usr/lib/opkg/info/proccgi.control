@@ -1,8 +1,0 @@
-Package: proccgi
-Version: 4
-Depends: libc, libssp, datalib
-Source: package/dni/proccgi
-Section: dni
-Architecture: ipq
-Installed-Size: 3110
-Description:  The CGI interface

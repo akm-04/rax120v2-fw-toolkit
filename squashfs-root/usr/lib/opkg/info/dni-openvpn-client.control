@@ -1,8 +1,0 @@
-Package: dni-openvpn-client
-Version: 1.0
-Depends: libc, libssp, openvpn_dni-openssl, datalib
-Source: package/dni/dni-openvpn-client
-Section: net
-Architecture: ipq
-Installed-Size: 15704
-Description:  OpenVPN Client for Netgear

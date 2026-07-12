@@ -1,3 +1,0 @@
-/etc/modules.d/45-usb-phy-qcom-dwc3
-/etc/modules-boot.d/45-usb-phy-qcom-dwc3
-/lib/modules/4.4.60/phy-qcom-dwc3.ko

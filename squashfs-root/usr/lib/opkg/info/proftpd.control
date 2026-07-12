@@ -1,8 +1,0 @@
-Package: proftpd
-Version: 1.3.5-1
-Depends: libc, libssp, libncurses, datalib, libopenssl, libattr
-Source: package/dni/proftpd
-Section: net
-Architecture: ipq
-Installed-Size: 277345
-Description:  FTP Daemon

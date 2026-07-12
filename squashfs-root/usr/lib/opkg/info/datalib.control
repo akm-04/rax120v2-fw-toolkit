@@ -1,8 +1,0 @@
-Package: datalib
-Version: 1.0-1
-Depends: libc, libssp, dni-libmtd
-Source: package/dni/datalib
-Section: utils
-Architecture: ipq
-Installed-Size: 26859
-Description:  Small application for saving data on embedded system

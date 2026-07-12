@@ -1,8 +1,0 @@
-Package: net6conf
-Version: 0.2-1
-Depends: libc, libssp, kmod-ipv6
-Source: package/dni/net6conf
-Section: dni
-Architecture: all
-Installed-Size: 22602
-Description:  IPv6 scripts

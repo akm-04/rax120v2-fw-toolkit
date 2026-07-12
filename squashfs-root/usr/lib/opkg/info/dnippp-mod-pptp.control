@@ -1,8 +1,0 @@
-Package: dnippp-mod-pptp
-Version: 2.4.9-8
-Depends: libc, libssp, dnippp, kmod-pptp
-Source: package/dni/dnippp
-Section: net
-Architecture: ipq
-Installed-Size: 9589
-Description:  This package contains a PPTP (PPP over GRE/IPv4) plugin for ppp.

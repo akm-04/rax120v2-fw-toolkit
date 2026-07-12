@@ -1,8 +1,0 @@
-Package: xagent
-Version: 3.2.7
-Depends: libc, libssp, libpthread, curl, libopenssl, d2, datalib
-Source: package/ntgr/xagent
-Section: dal
-Architecture: ipq
-Installed-Size: 1634979
-Description:  Netgear dal xagent

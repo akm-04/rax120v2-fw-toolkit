@@ -1,9 +1,0 @@
-Package: stress
-Version: 1.0.4-1
-Depends: libc, libssp
-Source: qca/feeds/packages/utils/stress
-Section: utils
-Architecture: ipq
-Installed-Size: 8150
-Description:  stress is a simple tool that imposes certain types of compute \ stress on
- UNIX-like operating systems.

@@ -1,8 +1,0 @@
-Package: kmod-dni-qos
-Version: 4.4.60+-ipq-
-Depends: kernel (=4.4.60-1-018eada0213162bd65104f3c1334fafe)
-Source: package/dni/kmod-dni-qos
-Section: kernel
-Architecture: ipq
-Installed-Size: 5569
-Description:  Module to support qos

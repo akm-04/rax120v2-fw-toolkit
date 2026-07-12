@@ -1,9 +1,0 @@
-Package: arptables
-Version: 0.0.4-1
-Depends: libc, libssp, kmod-arptables
-Source: package/network/utils/arptables
-License: GPL-2.0
-Section: net
-Architecture: ipq
-Installed-Size: 21906
-Description:  ARP firewalling software

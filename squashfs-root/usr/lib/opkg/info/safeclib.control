@@ -1,8 +1,0 @@
-Package: safeclib
-Version: 3.3-1
-Depends: libc, libssp, libstdcpp
-Source: package/dni/safeclib
-Section: libs
-Architecture: ipq
-Installed-Size: 57832
-Description:  Support C11 safe C library

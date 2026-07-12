@@ -1,9 +1,0 @@
-/sbin/dhcp_config_action.sh
-/usr/share/udhcpc/org_check_egress_pri.script
-/usr/share/udhcpc/enable_option.script
-/usr/share/zcip/zcip.script
-/sbin/udhcpc
-/sbin/udhcpd
-/usr/share/udhcpc/default.script
-/usr/share/udhcpc/default.script.ap
-/usr/share/udhcpc/org_dhcp_pri_config.script

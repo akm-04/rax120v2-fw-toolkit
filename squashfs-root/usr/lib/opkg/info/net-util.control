@@ -1,8 +1,0 @@
-Package: net-util
-Version: 1-1
-Depends: libc, libssp, datalib
-Source: package/dni/net-util
-Section: utils
-Architecture: ipq
-Installed-Size: 18547
-Description:  This package contains an utility for configuring Home Router.

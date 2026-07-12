@@ -1,8 +1,0 @@
-Package: qca-cnss-daemon
-Version: g-1
-Depends: libc, libssp, libnl, libpthread, qca-qmi-framework, qca-qmi, qca-data
-Source: qca/feeds/qca/utils/qca-cnss-daemon
-Section: QCA
-Architecture: ipq
-Installed-Size: 19444
-Description:  QCA Linux QMI sotware

@@ -1,6 +1,0 @@
-/usr/sbin/fw_upg.sh
-/usr/etc/firmware_update/do_action.sh
-/usr/sbin/firmware_update
-/usr/etc/firmware_update/post_action.sh
-/usr/etc/firmware_update/pre_action.sh
-/usr/sbin/part_dev

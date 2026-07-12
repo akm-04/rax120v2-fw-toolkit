@@ -1,8 +1,0 @@
-Package: dnitoolbox
-Version: 0.1-1
-Depends: libc, libssp
-Source: package/dni/dnitoolbox
-Section: utils
-Architecture: ipq
-Installed-Size: 7208
-Description:  a set of dni common tools

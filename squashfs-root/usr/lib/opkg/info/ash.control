@@ -1,8 +1,0 @@
-Package: ash
-Version: 1.0.0-1
-Depends: libc, libssp, libpthread, d2, libcrypt0, libssl, libcurl, dil, ld2dynlog, armor
-Source: package/ntgr/ash
-Section: ash
-Architecture: ipq
-Installed-Size: 26037
-Description:  ASH for Orbi

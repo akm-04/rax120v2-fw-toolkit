@@ -1,8 +1,0 @@
-Package: dnica-certificates
-Version: dni-1
-Depends: libc, libssp
-Source: package/dni/dnica-certificates
-Section: base
-Architecture: ipq
-Installed-Size: 303443
-Description:  System CA certificates

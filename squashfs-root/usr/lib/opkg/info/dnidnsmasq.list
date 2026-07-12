@@ -1,5 +1,0 @@
-/etc/dnsmasq.conf
-/sbin/mul_pppoe_dns
-/etc/init.d/dnsmasq
-/usr/sbin/dns-hijack
-/usr/sbin/dnsmasq

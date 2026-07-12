@@ -1,8 +1,0 @@
-Package: kmod-i2c-pct2075
-Version: 4.4.60-1
-Depends: kernel (=4.4.60-1-018eada0213162bd65104f3c1334fafe)
-Source: package/dni/i2c-pct2075
-Section: kernel
-Architecture: ipq
-Installed-Size: 4896
-Description:  Driver for I2C Thermal Sensor

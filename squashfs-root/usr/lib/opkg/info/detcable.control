@@ -1,8 +1,0 @@
-Package: detcable
-Version: 1
-Depends: libc, libssp, datalib
-Source: package/dni/detcable
-Section: utils
-Architecture: ipq
-Installed-Size: 7596
-Description:  Update utility for wan cable link detect

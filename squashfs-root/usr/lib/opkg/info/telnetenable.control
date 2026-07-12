@@ -1,8 +1,0 @@
-Package: telnetenable
-Version: 1
-Depends: libc, libssp, datalib
-Source: package/dni/telnetenable
-Section: dni
-Architecture: ipq
-Installed-Size: 10857
-Description:  unlocking the utelnetd.

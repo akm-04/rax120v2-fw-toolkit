@@ -1,9 +1,0 @@
-Package: qca-hostap
-Version: g10.0.3440.3920-1
-Depends: libc, libssp, libnl, libopenssl
-Source: qca/feeds/qca/net/qca-hostap
-Section: QCA
-Maintainer: Qualcomm Atheros
-Architecture: ipq
-Installed-Size: 511746
-Description:  This package contains the IEEE 802.1x/WPA/EAP/RADIUS Authenticator.

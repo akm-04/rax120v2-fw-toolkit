@@ -1,9 +1,0 @@
-Package: qsdk-wifi-script
-Version: 1-1
-Depends: libc, libssp
-Source: package/qca/qsdk-wifi-script
-Section: net
-Maintainer: Matthew McClintock <mmcclint@qca.qualcomm.com>
-Architecture: ipq
-Installed-Size: 97542
-Description:  qca-wifi scripts

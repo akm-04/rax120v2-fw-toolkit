@@ -1,9 +1,0 @@
-Package: qca-whc-init
-Version: 1
-Depends: libc, libssp
-Source: qca/feeds/whc/qca-whc-init
-Section: QCA
-Maintainer: Qualcomm Atheros
-Architecture: ipq
-Installed-Size: 2142
-Description:  This Package contains the script helper files for the Whole Home Coverage init scripts

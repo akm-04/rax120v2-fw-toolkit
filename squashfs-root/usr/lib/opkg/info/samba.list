@@ -1,5 +1,0 @@
-/usr/sbin/nmbd
-/lib/upgrade/keep.d/samba
-/usr/sbin/smbpasswd
-/usr/sbin/smbd
-/usr/sbin/samba_multicall

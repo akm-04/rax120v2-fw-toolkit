@@ -1,8 +1,0 @@
-Package: samba-scripts
-Version: 1.0.0-1
-Depends: libc, libssp, datalib
-Source: package/dni/samba-scripts
-Section: net
-Architecture: ipq
-Installed-Size: 20151
-Description:  SAMBA Scripts

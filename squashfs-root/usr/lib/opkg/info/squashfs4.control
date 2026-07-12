@@ -1,8 +1,0 @@
-Package: squashfs4
-Version: 4.2
-Depends: libc, libssp, liblzma, zlib
-Source: package/utils/squashfs4
-Section: utils
-Architecture: ipq
-Installed-Size: 80183
-Description:  squashfs tools
