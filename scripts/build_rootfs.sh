@@ -30,7 +30,7 @@ source "$SCRIPT_DIR/_lib_toolpath.sh"
 
 # ---- config -------------------------------------------------------------
 SRC_DIR="${SRC_DIR_OVERRIDE:-squashfs-root}"
-OUT_DIR="out"
+OUT_DIR="${OUT_DIR_OVERRIDE:-out}"
 LABEL="${1:-}"
 TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
 

@@ -26,6 +26,7 @@ fi
 # ============================================================================
 # Required external tools — checked once at startup,
 # ============================================================================
+# sudo apt-get install -y fakeroot u-boot-tools patch binwalk
 REQUIRED_TOOLS=(
     mkimage
     dumpimage
@@ -40,16 +41,19 @@ REQUIRED_TOOLS=(
 # ============================================================================
 
 # WORK_DIR: where unpack.sh stores header/FIT/rootfs slices + info.txt
-WORK_DIR="out"
+WORK_DIR="tmp"
 # Exported so unpack_rootfs.sh / build_rootfs.sh (via resolve_fakeroot_state
 # in _lib_toolpath.sh) 
 export RAX120_WORK_DIR="$WORK_DIR"
 
+# Exported so build_rootfs.sh writes its built squashfs images into $WORK_DIR too
+export OUT_DIR_OVERRIDE="$WORK_DIR"
+
 # TEST_WORK_DIR: separate scratch dir used ONLY by "Test unpack/repack"
-TEST_WORK_DIR="out/test_run"
+TEST_WORK_DIR="$WORK_DIR/test_run"
 
 # ROOTFS_EXTRACT_DIR: default destination for unpack_rootfs.sh's extraction
-ROOTFS_EXTRACT_DIR="out/extracted_rootfs"
+ROOTFS_EXTRACT_DIR="extracted_rootfs"
 
 # TARGET_ROOTFS_DIR: if set, this directory is used as the rootfs source for
 # packing INSTEAD of ROOTFS_EXTRACT_DIR — e.g. point this at a separately
@@ -380,7 +384,7 @@ action_apply_mods() {
 action_repack_fw() {
     log_section "Repack final firmware image"
     local script; script=$(require_script "repack.sh") || { pause; return; }
-    local newrootfs="out/rootfs_latest.squashfs"
+    local newrootfs="$WORK_DIR/rootfs_latest.squashfs"
 
     # Explicit precondition check: repack needs the header + FIT slices that
     # only unpack.sh produces — fail clearly here rather than let repack.sh's
@@ -462,7 +466,7 @@ action_full_pipeline() {
 
     log_section "Step 5/5: repack.sh"
     maybe_export_spoof_date "$WORK_DIR"
-    "$SCRIPTS_DIR/repack.sh" "$WORK_DIR" "out/rootfs_latest.squashfs" "$OUTPUT_IMG_NAME" \
+    "$SCRIPTS_DIR/repack.sh" "$WORK_DIR" "$WORK_DIR/rootfs_latest.squashfs" "$OUTPUT_IMG_NAME" \
         || { err "repack.sh failed"; unset SOURCE_DATE_EPOCH; pause; return; }
     unset SOURCE_DATE_EPOCH
 
