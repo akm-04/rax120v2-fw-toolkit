@@ -61,6 +61,13 @@ ROOTFS_EXTRACT_DIR="out/extracted_rootfs"
 #               output would go to ROOTFS_EXTRACT_DIR and NOT be used.
 TARGET_ROOTFS_DIR=""
 
+# MODS_DIR: directory of NNN-description.sh / NNN[-description].patch mods
+# (see scripts/apply_mods.sh's header comment for the naming convention)
+# applied on top of the rootfs tree by action_apply_mods / the full
+# pipeline's mods step. A missing or empty MODS_DIR is a no-op, not an
+# error -- projects that don't use mods yet are unaffected.
+MODS_DIR="mods"
+
 # SPOOF_REPACK_DATE: 
 #   1 = reuse the ORIGINAL firmware's build timestamp when repaacking.
 #   0 = repack.sh stamps the real current time instead (mkimage's default).
@@ -134,6 +141,11 @@ print_config() {
         echo -e "${DIM}SPOOF_REPACK_DATE:   1 (repack reuses original build timestamp)${NC}"
     else
         echo -e "${DIM}SPOOF_REPACK_DATE:   0 (repack stamps current time)${NC}"
+    fi
+    if [ -d "$MODS_DIR" ]; then
+        echo -e "${DIM}MODS_DIR:            $MODS_DIR${NC}"
+    else
+        echo -e "${DIM}MODS_DIR:            $MODS_DIR (doesn't exist — mods step is a no-op)${NC}"
     fi
     echo -e "${DIM}OUTPUT_IMG_NAME:     $OUTPUT_IMG_NAME${NC}"
     if [ -n "$STOCK_FW" ]; then
@@ -349,6 +361,19 @@ action_build_rootfs() {
     pause
 }
 
+action_apply_mods() {
+    log_section "Apply mods (mods/ -> rootfs tree)"
+    local script; script=$(require_script "apply_mods.sh") || { pause; return; }
+    local rootfs_src; rootfs_src=$(resolve_rootfs_src)
+    info "Rootfs tree: ${BOLD}$rootfs_src${NC}   Mods dir: ${BOLD}$MODS_DIR${NC}"
+    [ -n "$TARGET_ROOTFS_DIR" ] && info "${DIM}(using TARGET_ROOTFS_DIR override)${NC}"
+    [ -d "$rootfs_src" ] || { err "Directory not found: $rootfs_src -- unpack/extract a rootfs tree first."; pause; return; }
+    "$script" "$rootfs_src" "$MODS_DIR"
+    local rc=$?
+    [ "$rc" -eq 0 ] && ok "apply_mods.sh finished" || err "apply_mods.sh exited with code $rc"
+    pause
+}
+
 action_repack_fw() {
     log_section "Repack final firmware image"
     local script; script=$(require_script "repack.sh") || { pause; return; }
@@ -381,11 +406,12 @@ action_repack_fw() {
 }
 
 action_full_pipeline() {
-    log_section "Full pipeline: unpack fw -> unpack rootfs -> (edit) -> pack -> repack"
-    echo -e "${DIM}This runs each step in sequence, pausing before the repack step so you"
-    echo -e "can edit files in the extracted rootfs tree first.${NC}"
+    log_section "Full pipeline: unpack fw -> unpack rootfs -> apply mods -> (edit) -> pack -> repack"
+    echo -e "${DIM}This runs each step in sequence. mods/ (if present) is applied"
+    echo -e "automatically, then it pauses so you can make any further manual edits"
+    echo -e "in the rootfs tree before rebuild + repack.${NC}"
     echo
-    for s in unpack.sh unpack_rootfs.sh build_rootfs.sh repack.sh; do
+    for s in unpack.sh unpack_rootfs.sh apply_mods.sh build_rootfs.sh repack.sh; do
         require_script "$s" > /dev/null || { pause; return; }
     done
 
@@ -397,14 +423,14 @@ action_full_pipeline() {
     get_firmware_path || { warn "Cancelled."; pause; return; }
     [ -f "$IMG" ] || { err "File not found: $IMG"; pause; return; }
 
-    log_section "Step 1/4: unpack.sh"
+    log_section "Step 1/5: unpack.sh"
     "$SCRIPTS_DIR/unpack.sh" "$IMG" "$WORK_DIR" || { err "unpack.sh failed"; pause; return; }
 
     if [ -n "$TARGET_ROOTFS_DIR" ]; then
-        log_section "Step 2/4: SKIPPED (TARGET_ROOTFS_DIR override in effect)"
+        log_section "Step 2/5: SKIPPED (TARGET_ROOTFS_DIR override in effect)"
         [ -d "$TARGET_ROOTFS_DIR" ] || { err "TARGET_ROOTFS_DIR ($TARGET_ROOTFS_DIR) does not exist"; pause; return; }
     else
-        log_section "Step 2/4: unpack_rootfs.sh"
+        log_section "Step 2/5: unpack_rootfs.sh"
         if [ -e "$ROOTFS_EXTRACT_DIR" ]; then
             warn "$ROOTFS_EXTRACT_DIR already exists."
             prompt CONFIRM "Remove and re-extract? (y/N)" "N" || { warn "Cancelled."; pause; return; }
@@ -416,15 +442,22 @@ action_full_pipeline() {
         fi
     fi
 
+    log_section "Step 3/5: apply_mods.sh"
+    if [ -d "$MODS_DIR" ]; then
+        "$SCRIPTS_DIR/apply_mods.sh" "$rootfs_src" "$MODS_DIR" || { err "apply_mods.sh failed"; pause; return; }
+    else
+        info "$MODS_DIR not found — skipping (no-op, not an error)."
+    fi
+
     echo
-    warn "PAUSED: edit files under $rootfs_src/ now if you want to make changes."
+    warn "PAUSED: edit files under $rootfs_src/ now if you want to make further changes."
     prompt _ "Press Enter when ready to continue (rebuild + repack)" "" || { warn "Cancelled — partial state left in place."; pause; return; }
 
-    log_section "Step 3/4: build_rootfs.sh"
+    log_section "Step 4/5: build_rootfs.sh"
     ( export SRC_DIR_OVERRIDE="$rootfs_src"; "$SCRIPTS_DIR/build_rootfs.sh" "" ) \
         || { err "build_rootfs.sh failed"; pause; return; }
 
-    log_section "Step 4/4: repack.sh"
+    log_section "Step 5/5: repack.sh"
     maybe_export_spoof_date "$WORK_DIR"
     "$SCRIPTS_DIR/repack.sh" "$WORK_DIR" "out/rootfs_latest.squashfs" "$OUTPUT_IMG_NAME" \
         || { err "repack.sh failed"; unset SOURCE_DATE_EPOCH; pause; return; }
@@ -518,8 +551,9 @@ show_menu() {
     echo -e "${GREEN} 2)${NC} Unpack rootfs squashfs -> tree        (unpack_rootfs.sh)"
     echo -e "${GREEN} 3)${NC} Pack rootfs tree -> squashfs           (build_rootfs.sh)"
     echo -e "${GREEN} 4)${NC} Repack final firmware.img              (repack.sh)"
-    echo -e "${GREEN} 5)${NC} Run full pipeline (1 -> 2 -> edit -> 3 -> 4)"
+    echo -e "${GREEN} 5)${NC} Run full pipeline (1 -> 2 -> apply mods -> edit -> 3 -> 4)"
     echo -e "${MAGENTA} 6)${NC} Test unpack/repack reliability ${DIM}(no rootfs edit — validates offsets)${NC}"
+    echo -e "${GREEN} 7)${NC} Apply mods only ${DIM}(mods/ -> current rootfs tree)${NC}"
     echo -e "${GREEN} q)${NC} Quit"
     echo
 }
@@ -540,6 +574,7 @@ while true; do
         4) action_repack_fw ;;
         5) action_full_pipeline ;;
         6) action_test_unpack_repack ;;
+        7) action_apply_mods ;;
         q|Q)
             echo -e "${CYAN}Bye.${NC}"
             exit 0
