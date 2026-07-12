@@ -41,6 +41,9 @@ REQUIRED_TOOLS=(
 
 # WORK_DIR: where unpack.sh stores header/FIT/rootfs slices + info.txt
 WORK_DIR="out"
+# Exported so unpack_rootfs.sh / build_rootfs.sh (via resolve_fakeroot_state
+# in _lib_toolpath.sh) 
+export RAX120_WORK_DIR="$WORK_DIR"
 
 # TEST_WORK_DIR: separate scratch dir used ONLY by "Test unpack/repack"
 TEST_WORK_DIR="out/test_run"

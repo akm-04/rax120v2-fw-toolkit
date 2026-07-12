@@ -44,3 +44,21 @@ resolve_tool() {
 
     printf -v "$__var" '%s' "$__resolved"
 }
+
+# resolve_fakeroot_state <out_var> <sibling_fallback_path>
+#
+# Decides where the fakeroot state file (produced by unpack_rootfs.sh,
+# consumed by build_rootfs.sh) lives.
+
+resolve_fakeroot_state() {
+    local __var="$1" __fallback="$2"
+    local __resolved
+
+    if [ -n "${RAX120_WORK_DIR:-}" ]; then
+        __resolved="${RAX120_WORK_DIR%/}/fakeroot.state"
+    else
+        __resolved="$__fallback"
+    fi
+
+    printf -v "$__var" '%s' "$__resolved"
+}

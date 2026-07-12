@@ -81,15 +81,9 @@ info "Compression: ${COMP}, block size ${BLOCK_SIZE}, all-root, no-xattrs"
 echo
 
 # --- FAKEROOT STATE (device node fidelity) ----------------------------------
-# Matches the sibling-path convention unpack_rootfs.sh uses: state file for
-# extraction into $SRC_DIR lives at "${SRC_DIR%/}.fakeroot.state". If it's
-# there, use it (fakeroot -i) so any device nodes unsquashfs had to fake
-# come through correctly instead of being packed as empty regular files. If
-# it's not there -- e.g. $SRC_DIR wasn't produced by unpack_rootfs.sh, or is
-# the default "squashfs-root" someone populated by hand -- degrade to a
-# plain fakeroot session (still lets -all-root/ownership work) and say so,
-# rather than silently building something that might be missing nodes.
-FAKEROOT_STATE="${SRC_DIR%/}.fakeroot.state"
+# Uses the same resolve_fakeroot_state logic unpack_rootfs.sh.
+
+resolve_fakeroot_state FAKEROOT_STATE "${SRC_DIR%/}.fakeroot.state"
 if [ -f "$FAKEROOT_STATE" ]; then
     ok "Found matching fakeroot state: $FAKEROOT_STATE"
     FAKEROOT_ARGS=(-i "$FAKEROOT_STATE")

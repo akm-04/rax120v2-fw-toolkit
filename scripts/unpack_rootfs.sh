@@ -71,10 +71,10 @@ fi
 
 [ -e "$OUT" ] && fail "$OUT already exists — refusing to overwrite. Remove it first or pick a new path."
 
-# Sibling state file, not nested inside $OUT -- keeps it out of the tree
-# build_rootfs.sh will later mksquashfs (a stray file inside $OUT would get
-# packed into the rootfs image itself).
-FAKEROOT_STATE="${OUT%/}.fakeroot.state"
+# resolve_fakeroot_state in _lib_toolpath.sh).
+
+resolve_fakeroot_state FAKEROOT_STATE "${OUT%/}.fakeroot.state"
+info "Fakeroot state file: $FAKEROOT_STATE"
 rm -f "$FAKEROOT_STATE"
 
 info "Extracting via $UNSQUASHFS (fakeroot -s, saving state to $FAKEROOT_STATE)"
