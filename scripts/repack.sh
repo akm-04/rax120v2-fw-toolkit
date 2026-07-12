@@ -59,7 +59,8 @@ ok "Params: arch=$UIMAGE_ARCH os=$UIMAGE_OS type=$UIMAGE_TYPE comp=$UIMAGE_COMP 
 
 info "Verifying new rootfs format"
 new_magic=$(dd if="$NEW_ROOTFS" bs=1 count=4 2>/dev/null | od -An -tx1 | tr -d ' \n')
-new_rootfs_size=$(stat -c%s "$NEW_ROOTFS")
+# NOTE: -L (dereference) is required here. NEW_ROOTFS is commonly a symlink
+new_rootfs_size=$(stat -Lc%s "$NEW_ROOTFS")
 if [ "$new_magic" = "68737173" ]; then
     ok "squashfs magic confirmed ('hsqs'), $new_rootfs_size bytes"
 else
