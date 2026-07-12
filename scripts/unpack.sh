@@ -190,6 +190,58 @@ rm -f "$OUT/.tmp_full_uimage.bin"
 sed 's/^/    /' "$OUT/rootfs_header_decoded.txt"
 
 echo
+info "Decoding uImage header fields directly (for repack.sh's mkimage rebuild)"
+# Read straight from the 64-byte legacy header at $FW_HDR_OFFSET instead of
+# trusting a fixed set of values -- a different firmware version can ship a
+# different kernel name/load/entry, and repack.sh blindly trusting stale
+# values here would silently build a wrong wrapper. Field layout mirrors
+# struct legacy_img_hdr in U-Boot's include/image.h (offsets from the start
+# of the 64-byte header: 16=load, 20=entry, 28=os, 29=arch, 30=type,
+# 31=comp, 32..63=name).
+ih_load_hex=$(read_hex "$IMG" $((FW_HDR_OFFSET+16)) 4)
+ih_ep_hex=$(read_hex "$IMG" $((FW_HDR_OFFSET+20)) 4)
+UIMAGE_LOAD="0x${ih_load_hex}"
+UIMAGE_ENTRY="0x${ih_ep_hex}"
+
+ih_os_byte=$(( 16#$(read_hex "$IMG" $((FW_HDR_OFFSET+28)) 1) ))
+ih_arch_byte=$(( 16#$(read_hex "$IMG" $((FW_HDR_OFFSET+29)) 1) ))
+ih_type_byte=$(( 16#$(read_hex "$IMG" $((FW_HDR_OFFSET+30)) 1) ))
+ih_comp_byte=$(( 16#$(read_hex "$IMG" $((FW_HDR_OFFSET+31)) 1) ))
+
+# Lookup tables cover only the codes this pipeline has actually seen so far.
+# An unrecognized byte is a hard fail, not a guess -- cross-check the value
+# against rootfs_header_decoded.txt above, then extend the matching case
+# block (values are U-Boot's IH_OS/IH_ARCH/IH_TYPE/IH_COMP enums).
+case "$ih_os_byte" in
+    5) UIMAGE_OS="linux" ;;
+    *) fail "Unrecognized ih_os byte: $ih_os_byte -- cross-check rootfs_header_decoded.txt and extend the ih_os case in unpack.sh." ;;
+esac
+case "$ih_arch_byte" in
+    2)  UIMAGE_ARCH="arm" ;;
+    22) UIMAGE_ARCH="arm64" ;;
+    *) fail "Unrecognized ih_arch byte: $ih_arch_byte -- cross-check rootfs_header_decoded.txt and extend the ih_arch case in unpack.sh." ;;
+esac
+case "$ih_type_byte" in
+    2) UIMAGE_TYPE="kernel" ;;
+    3) UIMAGE_TYPE="ramdisk" ;;
+    7) UIMAGE_TYPE="filesystem" ;;
+    *) fail "Unrecognized ih_type byte: $ih_type_byte -- cross-check rootfs_header_decoded.txt and extend the ih_type case in unpack.sh." ;;
+esac
+case "$ih_comp_byte" in
+    0) UIMAGE_COMP="none" ;;
+    1) UIMAGE_COMP="gzip" ;;
+    2) UIMAGE_COMP="bzip2" ;;
+    3) UIMAGE_COMP="lzma" ;;
+    4) UIMAGE_COMP="lzo" ;;
+    5) UIMAGE_COMP="lz4" ;;
+    *) fail "Unrecognized ih_comp byte: $ih_comp_byte -- cross-check rootfs_header_decoded.txt and extend the ih_comp case in unpack.sh." ;;
+esac
+
+UIMAGE_NAME=$(dd if="$IMG" bs=1 skip=$((FW_HDR_OFFSET+32)) count=32 status=none | tr -d '\0')
+
+ok "Decoded: name=\"$UIMAGE_NAME\" arch=$UIMAGE_ARCH os=$UIMAGE_OS type=$UIMAGE_TYPE comp=$UIMAGE_COMP load=$UIMAGE_LOAD entry=$UIMAGE_ENTRY"
+
+echo
 info "Diagnostic: rootfs payload compression check"
 payload_magic=$(read_hex "$OUT/03_rootfs_payload.bin" 0 4)
 echo -e "    ${C_DIM}First 4 bytes of payload: $payload_magic${C_RESET}"
@@ -215,14 +267,17 @@ ROOTFS_PAYLOAD_OFFSET=$FW_DATA_OFFSET
 ROOTFS_PAYLOAD_SIZE=$FW_DECLARED_SIZE
 ROOTFS_TRAILING_BYTES=$FW_TRAILING_BYTES
 
-# uImage header params for the rootfs wrapper (confirmed via mkimage -l — see rootfs_header_decoded.txt)
-UIMAGE_NAME="Linux-4.4.60"
-UIMAGE_ARCH=arm64
-UIMAGE_OS=linux
-UIMAGE_TYPE=kernel
-UIMAGE_COMP=lzma
-UIMAGE_LOAD=0x40908000
-UIMAGE_ENTRY=0x40908000
+# uImage header params for the rootfs wrapper -- decoded directly from the
+# 64-byte legacy header at ROOTFS_UIMAGE_HDR_OFFSET (see "Decoding uImage
+# header fields directly" step above; human-readable cross-check in
+# rootfs_header_decoded.txt), not hardcoded.
+UIMAGE_NAME="$UIMAGE_NAME"
+UIMAGE_ARCH=$UIMAGE_ARCH
+UIMAGE_OS=$UIMAGE_OS
+UIMAGE_TYPE=$UIMAGE_TYPE
+UIMAGE_COMP=$UIMAGE_COMP
+UIMAGE_LOAD=$UIMAGE_LOAD
+UIMAGE_ENTRY=$UIMAGE_ENTRY
 
 # Raw Unix epoch from the ORIGINAL header's timestamp field (offset 8-11).
 # repack.sh doesn't need to know about this directly — mkimage natively
