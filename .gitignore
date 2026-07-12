@@ -1,2 +1,16 @@
 out/
 /*.img
+tmp/
+tools/squashfs/squashfs3.0/
+tools/squashfs4/squashfs4.2/
+tools/xz/xz-5.2.1/
+tools/xz/staging/
+tools/lzma/staging/
+tools/lzma-old/staging/
+tools/lzma/lzma-4.65/
+tools/lzma-old/lzma-4.32/
+extracted_rootfs
+# Python bytecode cache
+__pycache__/
+*.py[cod]
+*$py.class
