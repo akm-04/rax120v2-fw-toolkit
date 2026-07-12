@@ -138,28 +138,11 @@ check_env() {
         command -v "$tool" >/dev/null 2>&1 || missing+=("$tool")
     done
 
-    if [ "${#missing[@]}" -gt 0 ] && command -v distrobox >/dev/null 2>&1; then
-        local setup_script="$SCRIPTS_DIR/setup_distrobox_tools.sh"
-        warn "Missing tool(s): ${missing[*]}"
-        if [ -f "$setup_script" ]; then
-            warn "distrobox is installed on this system — some of these may just need exporting."
-            prompt _ "Try scripts/setup_distrobox_tools.sh to auto-export them? (Enter to try, Ctrl+C to skip)" ""
-            if [ $? -eq 0 ]; then
-                bash "$setup_script"
-                # re-check — the export may have resolved some or all of it
-                missing=()
-                for tool in "${REQUIRED_TOOLS[@]}"; do
-                    command -v "$tool" >/dev/null 2>&1 || missing+=("$tool")
-                done
-            fi
-        fi
-    fi
-
     if [ "${#missing[@]}" -gt 0 ]; then
         err "Missing required tool(s) on PATH: ${missing[*]}"
         echo -e "${DIM}All of: ${REQUIRED_TOOLS[*]}${NC}"
-        echo -e "${DIM}must be resolvable before running this toolkit. If some live inside a${NC}"
-        echo -e "${DIM}distrobox container, run: scripts/setup_distrobox_tools.sh [container_name]${NC}"
+        echo -e "${DIM}must be resolvable before running this toolkit. Install via your normal${NC}"
+        echo -e "${DIM}package manager (e.g. u-boot-tools for mkimage/dumpimage).${NC}"
         exit 1
     fi
     ok "Environment OK — all required tools found: ${REQUIRED_TOOLS[*]}"
