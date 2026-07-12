@@ -1,154 +1,94 @@
-# RAX120v2 — rootfs extraction / modification / repack notes
+# OpenWrt-NSS — RAX120v2 Firmware Toolkit
 
-Working notes for pulling, modifying, and reflashing the `rootfs` (mtd26)
-partition on a NETGEAR RAX120v2 (IPQ8074A, Chaos Calmer derivative,
-kernel 4.4.60). Keep this updated as the source of truth for what's been
-changed and why — the router itself has no persistent overlay, so this
-repo + the `out/` builds are the only durable record of any modification.
+Unpack, edit, and repack NETGEAR RAX120v2 firmware images.
 
-## Device reference
+## Layout
 
 ```
-mtd24: 06400000  firmware   (kernel + rootfs combined image, GUI upload target)
-mtd25: 00620000  kernel     (uImage)
-mtd26: 05de0000  rootfs     (squashfs, xz, block size 262144, ~93.87 MB partition)
+.
+├── rax120-toolkit.sh   # interactive menu — start here
+├── scripts/            # unpack.sh, unpack_rootfs.sh, build_rootfs.sh, repack.sh
+├── bin/                # vendored mksquashfs4 / unsquashfs4 (preferred over host tools)
+├── Stock_FW/            # place original .img files here
+└── out/                 # all generated output lands here
 ```
 
-Confirmed on-device facts (do not re-derive these from scratch, they're settled):
+## Quick start
 
-- No dm-verity. `/proc/cmdline` has no `root_hash=`/`dm-mod.create=`, `dmesg`
-  has no verity references, `/dev/root` mounts squashfs directly (not via a
-  `/dev/dm-*` mapper device). `dm_req_crypt` module present is Qualcomm FDE,
-  unrelated.
-- No persistent overlay. Root is `overlayfs:/tmp/root/root` on tmpfs — every
-  live change (killing a daemon, editing a file at runtime) is lost on
-  reboot. Anything permanent must go through this repack-and-flash process.
-- `vol_armor` (Bitdefender payload, ~52 MB) lives in a **separate UBI
-  volume** (mtd38), not inside the squashfs rootfs. Removing the launcher
-  from rootfs stops it from *starting*; it doesn't remove the volume itself.
-
-## 1. Pull rootfs off the router
-
-On the router:
-```sh
-dd if=/dev/mtd26 bs=1M 2>/dev/null | nc <laptop_ip> 9999
+```bash
+./rax120-toolkit.sh
 ```
 
-On the laptop, listening first:
-```sh
-nc -l -p 9999 > rootfs.squashfs.orig
+Pick **5) Run full pipeline** — it unpacks the stock image, extracts the
+rootfs to a tree, pauses so you can edit files, then rebuilds and repacks
+into `RAX120-CUSTOM.img`.
+
+If you just want to poke around without editing anything, run
+**6) Test unpack/repack reliability** — does a full unpack → repack pass
+with no edits and reports whether the result is byte-identical to the
+original.
+
+## Manual step-by-step
+
+```bash
+scripts/unpack.sh         Stock_FW/RAX120-Vx.x.x.x.img out
+scripts/unpack_rootfs.sh  out/03_rootfs_payload.bin    out/extracted_rootfs
+# ... edit files under out/extracted_rootfs/ ...
+scripts/build_rootfs.sh   <label>          # SRC_DIR_OVERRIDE=out/extracted_rootfs if not default
+scripts/repack.sh         out out/rootfs_latest.squashfs RAX120-CUSTOM.img
 ```
 
-Note: this captures the **full partition**, including trailing `0xFF` pad
-out to the 98,435,072-byte (0x5de0000) partition boundary. The real
-squashfs image inside it is smaller (~57 MB) — `unsquashfs -s` on the dump
-will report the true filesystem size. Never write the padded `.orig` file
-back with `nandwrite`; only ever write a freshly built image.
+## If the tools in `bin/` don't work
 
-## 2. Extract
-
-Stock `unsquashfs` fails on this image:
-```
-xz: error reading stored compressor options from filesystem!
-```
-This is a vendor-SDK `mksquashfs` quirk (non-standard compressor-options
-block), not corruption. `binwalk`'s bundled `sasquatch` extractor tolerates
-it:
+`bin/mksquashfs4` / `bin/unsquashfs4` are prebuilt from NETGEAR's GPL source
+and are what everything above assumes you're using. If they don't run on
+your machine (missing libs, wrong arch, etc.), rebuild them:
 
 ```sh
-binwalk -e rootfs.squashfs.orig
-# -> rootfs.squashfs.orig.extracted/0/squashfs-root/
+make tools
 ```
 
-Move/copy the resulting `squashfs-root/` into the repo root so
-`build_rootfs.sh` can find it:
-```sh
-cp -a rootfs.squashfs.orig.extracted/0/squashfs-root ./squashfs-root
-```
-
-## 3. Original image reference values
-
-For sanity-checking any rebuild against the stock image:
-
-```
-Compression:      xz
-Block size:        262144
-Fragments:          252
-Inodes:             4585
-Xattrs:              not stored
-Uid/Gid:              single owner, root (0)
-```
-
-33 paths will always show up as "differs"/"missing" in any `diff -rq`
-against a live-mounted rebuild — these are **dangling symlinks by design**
-(e.g. `/etc/passwd -> /tmp/config/passwd`, `/sbin/apsched -> /sbin/net-util`),
-targets populated by init scripts at boot, not present in a static,
-unbooted rootfs. Confirmed via `find squashfs-root -xtype l | wc -l` = 33,
-matching exactly. Anything beyond that known set of 33 in a diff is a real
-regression worth investigating.
-
-## 4. Make edits
-
-Edit files directly under `squashfs-root/`. Prefer the smallest possible
-diff — e.g. removing an `/etc/rc.d/S9x...` symlink rather than modifying
-the target script under `/etc/init.d/`, so changes are easy to review and
-revert individually.
-
-## 5. Repack
+If that errors out, it's almost certainly a toolchain/library mismatch —
+the GPL source expects an Ubuntu 14.04-era build environment. Spin one up
+with distrobox and build inside it instead:
 
 ```sh
-./build_rootfs.sh [optional-label]
-```
-Produces `out/rootfs_<timestamp>[_label].squashfs`, updates
-`out/checksums.sha256`, and symlinks `out/rootfs_latest.squashfs`.
-
-## 6. Local validation (before touching hardware)
-
-```sh
-mkdir -p /tmp/mnt_test
-sudo mount -t squashfs -o loop out/rootfs_latest.squashfs /tmp/mnt_test
-diff -rq squashfs-root /tmp/mnt_test
-sudo umount /tmp/mnt_test
-```
-Expect silence, or exactly the 33 known dangling-symlink lines from §3.
-
-## 7. Transfer and flash
-
-```sh
-# laptop
-nc -l -p 9999 < out/rootfs_latest.squashfs
-
-# router
-nc <laptop_ip> 9999 > /tmp/rootfs.squashfs
-sha256sum /tmp/rootfs.squashfs      # compare against out/checksums.sha256
-
-flash_erase /dev/mtd26 0 0
-nandwrite -p /dev/mtd26 /tmp/rootfs.squashfs
-
-# verify BEFORE reboot — read back exactly the written byte count
-dd if=/dev/mtd26 bs=1 count=$(stat -c%s /tmp/rootfs.squashfs) 2>/dev/null | sha256sum
-# only reboot if this matches the transferred file's hash
+distrobox create --name ubuntu14 --image ubuntu:14.04
+distrobox enter ubuntu14
+# inside the container:
+sudo apt-get update
+sudo apt-get install -y build-essential linux-headers-generic \
+    libacl1-dev liblzo2-dev uuid-dev zlib1g-dev liblzma-dev libselinux1-dev
+make tools
 ```
 
-## Rollback
+See `tools/README.md` for where the GPL source itself comes from (official
+NETGEAR links are dead — Internet Archive mirror is linked there) and which
+patches are applied.
 
-Keep `rootfs.squashfs.orig` (the original padded dump from §1) somewhere
-safe outside this repo (it's large; not meant to be committed — see
-`.gitignore`). To revert to stock:
-```sh
-flash_erase /dev/mtd26 0 0
-nandwrite -p /dev/mtd26 rootfs.squashfs.orig
-```
-Confirm NMRP recovery mode works on this unit *before* you need it
-(power-on + hold reset until LED behavior changes) — that's the real
-fallback if a flash goes wrong, not the `.orig` file alone.
+## Important notes
 
-## Do not touch
+- **Use the vendored tools in `bin/`**, not host `mksquashfs`/`unsquashfs`.
+  Host builds are confirmed to encode this device's xz compressor-options
+  block differently — `unsquashfs -s` on the stock rootfs fails with
+  `error reading stored compressor options` under host tools.
+- The rootfs partition (mtd26) is **~93.87 MB** (`0x5de0000`) — `build_rootfs.sh`
+  checks your rebuilt image against this and refuses to let an oversized
+  build slide by silently.
+- Device nodes in the rootfs need a matching `fakeroot` state file
+  (`<dir>.fakeroot.state`) to survive the extract → repack round-trip —
+  `unpack_rootfs.sh` and `build_rootfs.sh` handle this automatically as
+  long as you don't rename or move the extracted tree.
+- **Always verify on-device** (sha256 read-back from mtd26) before rebooting
+  a flashed image.
 
-`DEVCFG`/`DEVCFG_1` (mtd6/7, SMMU config — verified via mtd6 strings dump
-to contain `disable_smmu_ac`, tied to the 1.2.9.52 reboot fix), `ART`/`ART.bak`
-(per-device RF calibration), `boarddata1/2`, `CDT`/`CDT_1`, and the entire
-early boot chain (`SBL1`, `MIBIB`, `BOOTCONFIG*`, `QSEE*`, `RPM*`,
-`APPSBLENV`, `APPSBL*`) — none of these are touched by this rootfs
-workflow, and none should be, short of deliberate, separately-researched
-changes.
+## Key env vars (set before running `rax120-toolkit.sh`, or edit its config block)
+
+| Var | Purpose |
+|---|---|
+| `BIN_DIR_OVERRIDE` | point at a different vendored-tools dir |
+| `ROOTFS_EXTRACT_DIR` | where step 2 extracts to (default `out/extracted_rootfs`) |
+| `TARGET_ROOTFS_DIR` | pack from a different tree instead (skips extraction) |
+| `SPOOF_REPACK_DATE` | `1` = reuse original image's build timestamp on repack |
+| `OUTPUT_IMG_NAME` | final repacked image filename |
+| `STOCK_FW` | dir to auto-scan for stock `.img` files |
