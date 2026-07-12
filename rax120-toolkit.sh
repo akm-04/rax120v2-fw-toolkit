@@ -10,18 +10,24 @@ set -uo pipefail
 
 SCRIPTS_DIR="scripts"
 
+BIN_DIR="${BIN_DIR_OVERRIDE:-bin}"
+if [ -d "$BIN_DIR" ]; then
+    export RAX120_BIN_DIR
+    RAX120_BIN_DIR="$(cd "$BIN_DIR" && pwd)"
+else
+    RAX120_BIN_DIR=""
+fi
+
 # ============================================================================
 # Required external tools — checked once at startup,
 # ============================================================================
 REQUIRED_TOOLS=(
     mkimage
     dumpimage
-    binwalk
-    mksquashfs
-    unsquashfs
     dd
     sha256sum
     cmp
+    fakeroot
 )
 
 # ============================================================================
@@ -99,6 +105,11 @@ err()   { echo -e "${RED}✗ ${1}${NC}"; }
 
 print_config() {
     echo -e "${DIM}scripts/ dir:        $SCRIPTS_DIR${NC}"
+    if [ -n "$RAX120_BIN_DIR" ]; then
+        echo -e "${DIM}bin/ dir:            $RAX120_BIN_DIR (vendored tools prebuilt)${NC}"
+    else
+        echo -e "${YELLOW}bin/ dir:            not found (looked for: $BIN_DIR) — squashfs steps will fall back to host tools${NC}"
+    fi
     echo -e "${DIM}WORK_DIR:            $WORK_DIR${NC}"
     echo -e "${DIM}TEST_WORK_DIR:       $TEST_WORK_DIR${NC}"
     echo -e "${DIM}ROOTFS_EXTRACT_DIR:  $ROOTFS_EXTRACT_DIR${NC}"

@@ -24,13 +24,20 @@ ok()    { echo -e "${C_GREEN}✓${C_RESET} ${1}"; }
 warn()  { echo -e "${C_YELLOW}!${C_RESET} ${1}"; }
 fail()  { echo -e "${C_RED}✗ ${1}${C_RESET}"; exit 1; }
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+# shellcheck source=_lib_toolpath.sh
+source "$SCRIPT_DIR/_lib_toolpath.sh"
+
 # ---- config -------------------------------------------------------------
 SRC_DIR="${SRC_DIR_OVERRIDE:-squashfs-root}"
 OUT_DIR="out"
 LABEL="${1:-}"
 TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
 
-# Known-good params, validated against the stock RAX120v2 image round-trip:
+# Known-good params, confirmed directly against the stock image's own
+# superblock (unsquashfs -s: "Compression xz", "Block size 262144") once a
+# format-matching unsquashfs build was used to read it -- not just measured
+# via a round-trip that a mismatched build could report misleadingly.
 COMP="xz"
 BLOCK_SIZE="262144"
 
@@ -53,7 +60,10 @@ echo -e "${C_RESET}"
 echo -e "${C_DIM}RAX120v2 squashfs rebuild — mksquashfs wrapper${C_RESET}"
 echo
 
-command -v mksquashfs >/dev/null 2>&1 || fail "mksquashfs not found. Install squashfs-tools."
+info "Resolving mksquashfs / unsquashfs"
+resolve_tool MKSQUASHFS mksquashfs4 mksquashfs
+resolve_tool UNSQUASHFS unsquashfs4 unsquashfs
+
 [ -d "$SRC_DIR" ] || fail "Source dir '$SRC_DIR' not found. Run this from the repo root."
 
 mkdir -p "$OUT_DIR"
@@ -70,9 +80,30 @@ info "Output:      ${OUT_PATH}"
 info "Compression: ${COMP}, block size ${BLOCK_SIZE}, all-root, no-xattrs"
 echo
 
+# --- FAKEROOT STATE (device node fidelity) ----------------------------------
+# Matches the sibling-path convention unpack_rootfs.sh uses: state file for
+# extraction into $SRC_DIR lives at "${SRC_DIR%/}.fakeroot.state". If it's
+# there, use it (fakeroot -i) so any device nodes unsquashfs had to fake
+# come through correctly instead of being packed as empty regular files. If
+# it's not there -- e.g. $SRC_DIR wasn't produced by unpack_rootfs.sh, or is
+# the default "squashfs-root" someone populated by hand -- degrade to a
+# plain fakeroot session (still lets -all-root/ownership work) and say so,
+# rather than silently building something that might be missing nodes.
+FAKEROOT_STATE="${SRC_DIR%/}.fakeroot.state"
+if [ -f "$FAKEROOT_STATE" ]; then
+    ok "Found matching fakeroot state: $FAKEROOT_STATE"
+    FAKEROOT_ARGS=(-i "$FAKEROOT_STATE")
+else
+    warn "No fakeroot state at $FAKEROOT_STATE for this source dir."
+    warn "Building without it -- any device nodes in $SRC_DIR/ that only exist"
+    warn "as fakeroot-faked state elsewhere will NOT be preserved correctly."
+    FAKEROOT_ARGS=()
+fi
+# -----------------------------------------------------------------------
+
 # ---- build ----------------------------------------------------------------
 info "Running mksquashfs..."
-if mksquashfs "$SRC_DIR" "$OUT_PATH" \
+if fakeroot "${FAKEROOT_ARGS[@]}" -- "$MKSQUASHFS" "$SRC_DIR" "$OUT_PATH" \
     -comp "$COMP" \
     -b "$BLOCK_SIZE" \
     -noappend \
@@ -86,7 +117,7 @@ echo
 
 # ---- verify -----------------------------------------------------------------
 info "Verifying superblock..."
-unsquashfs -s "$OUT_PATH" | sed 's/^/    /' || warn "unsquashfs -s reported an issue reading back the build (unexpected for a freshly-built image — investigate)"
+"$UNSQUASHFS" -s "$OUT_PATH" | sed 's/^/    /' || warn "unsquashfs -s reported an issue reading back the build (unexpected for a freshly-built image — investigate)"
 echo
 
 SIZE_BYTES=$(stat -c%s "$OUT_PATH")
