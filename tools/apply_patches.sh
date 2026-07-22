@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -euo pipefail
 
@@ -19,6 +19,15 @@ if [ ! -d "$PATCH_DIR" ]; then
     echo "Error: Patches directory does not exist: $PATCH_DIR"
     exit 1
 fi
+
+# Resolve to absolute BEFORE the `cd "$SRC_DIR"` below -- otherwise a
+# relative PATCH_DIR (very natural to pass, e.g. `apply_patches.sh
+# squashfs-root mods` from repo root) silently breaks: the patch file
+# paths found here would still be relative to the ORIGINAL cwd, but every
+# `patch -p1 -i "$patchfile"` call below runs from inside $SRC_DIR, so
+# they'd resolve to the wrong place and every patch would report
+# "FAILED (dry-run)" even when the patch itself is completely valid.
+PATCH_DIR="$(cd "$PATCH_DIR" && pwd)"
 
 mapfile -t PATCHES < <(find "$PATCH_DIR" -maxdepth 1 -name '*.patch' -print | sort -V)
 
@@ -45,7 +54,7 @@ for patchfile in "${PATCHES[@]}"; do
         fi
         echo "FAILED (dry-run)"
         echo "  -> Re-run with: patch -p1 -i '$patchfile' --verbose"
-        ((FAILED++))
+        FAILED=$((FAILED + 1))
         continue
     fi
 
@@ -53,7 +62,7 @@ for patchfile in "${PATCHES[@]}"; do
         echo "OK"
     else
         echo "FAILED"
-        ((FAILED++))
+        FAILED=$((FAILED + 1))
     fi
 done
 
