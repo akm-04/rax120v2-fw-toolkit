@@ -175,11 +175,36 @@ dd if="$IMG" of="$OUT/02_rootfs_uimage_header.bin" bs=1 skip=$FW_HDR_OFFSET     
 dd if="$IMG" of="$OUT/03_rootfs_payload.bin"       bs=1 skip=$FW_DATA_OFFSET      count=$FW_DECLARED_SIZE    status=none
 ok "Sliced into 4 parts"
 
+echo
+info "Parsing mkdniimg header fields from 00_netgear_header.bin"
+# Format confirmed directly from Netgear's own GPL source
+# (tools/firmware-utils/src/mkdniimg.c): a plaintext, NUL-padded 128-byte
+# block written as "device:%s\nversion:%s\nregion:%s\n" + optionally
+# "hd_id:%s\n". Parsed here (not hardcoded) so repack.sh can regenerate an
+# identical, correctly-checksummed header for ANY firmware version/region
+# without per-version manual configuration -- it just clones the identity
+# of whichever stock image was unpacked.
+DNI_HDR_TEXT="$(tr -d '\0' < "$OUT/00_netgear_header.bin")"
+DNI_DEVICE="$(printf '%s\n' "$DNI_HDR_TEXT" | sed -n 's/^device:\(.*\)$/\1/p')"
+DNI_VERSION="$(printf '%s\n' "$DNI_HDR_TEXT" | sed -n 's/^version:\(.*\)$/\1/p')"
+DNI_REGION="$(printf '%s\n' "$DNI_HDR_TEXT" | sed -n 's/^region:\(.*\)$/\1/p')"
+DNI_HDID="$(printf '%s\n' "$DNI_HDR_TEXT" | sed -n 's/^hd_id:\(.*\)$/\1/p')"
+[ -n "$DNI_DEVICE" ]  || fail "Could not parse 'device:' from the NETGEAR header -- format changed? Inspect $OUT/00_netgear_header.bin manually."
+[ -n "$DNI_VERSION" ] || fail "Could not parse 'version:' from the NETGEAR header -- format changed? Inspect $OUT/00_netgear_header.bin manually."
+# DNI_REGION is legitimately empty on every stock image seen so far -- not
+# an error. DNI_HDID may also legitimately be absent (mkdniimg.c only
+# writes hd_id if -H was passed at original build time).
+ok "Parsed: device=$DNI_DEVICE version=$DNI_VERSION region='$DNI_REGION' hd_id=${DNI_HDID:-<none>}"
+
 if [ "$FW_TRAILING_BYTES" -gt 0 ]; then
     trailing_off=$((FW_DATA_OFFSET + FW_DECLARED_SIZE))
     dd if="$IMG" of="$OUT/04_trailing_bytes.bin" bs=1 skip=$trailing_off count=$FW_TRAILING_BYTES status=none
     warn "Captured $FW_TRAILING_BYTES trailing byte(s) separately -> $OUT/04_trailing_bytes.bin"
-    echo -e "    ${C_DIM}(inspect with: hexdump -C $OUT/04_trailing_bytes.bin)${C_RESET}"
+    echo -e "    ${C_DIM}(this is mkdniimg's own 1-byte checksum -- 0xff minus the 8-bit sum of${C_RESET}"
+    echo -e "    ${C_DIM}header+payload, confirmed from Netgear's GPL mkdniimg.c source. It is${C_RESET}"
+    echo -e "    ${C_DIM}NOT reattached verbatim by repack.sh anymore -- mkdniimg regenerates it${C_RESET}"
+    echo -e "    ${C_DIM}correctly for whatever new payload you repack. Captured here purely for${C_RESET}"
+    echo -e "    ${C_DIM}inspection: hexdump -C $OUT/04_trailing_bytes.bin${C_RESET}"
 fi
 
 echo
@@ -284,6 +309,16 @@ UIMAGE_ENTRY=$UIMAGE_ENTRY
 # honors SOURCE_DATE_EPOCH if the caller exports it before invoking repack.sh,
 # which is exactly what the wrapper's SPOOF_REPACK_DATE option does.
 UIMAGE_TIMESTAMP=$FW_TIMESTAMP
+
+# mkdniimg header identity -- parsed from 00_netgear_header.bin (see
+# "Parsing mkdniimg header fields" step above). repack.sh passes these
+# straight to mkdniimg -B/-v/-r/-H so the regenerated header (and its
+# checksum, which covers the header text itself) is byte-correct for
+# whatever payload you're repacking, no per-version hardcoding needed.
+DNI_DEVICE="$DNI_DEVICE"
+DNI_VERSION="$DNI_VERSION"
+DNI_REGION="$DNI_REGION"
+DNI_HDID="$DNI_HDID"
 EOF
 
 echo

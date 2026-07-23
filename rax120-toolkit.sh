@@ -18,6 +18,11 @@ else
     RAX120_BIN_DIR=""
 fi
 
+# Export mkdniimg override if the binary exists in the expected location
+if [ -x "$RAX120_BIN_DIR/firmware-utils/mkdniimg" ]; then
+    export MKDNIIMG_OVERRIDE="$RAX120_BIN_DIR/firmware-utils/mkdniimg"
+fi
+
 # ============================================================================
 # Required external tools — checked once at startup,
 # ============================================================================
@@ -110,6 +115,13 @@ print_config() {
     else
         echo -e "${YELLOW}bin/ dir:            not found (looked for: $BIN_DIR) — squashfs steps will fall back to host tools${NC}"
     fi
+
+    if [ -n "${MKDNIIMG_OVERRIDE:-}" ]; then
+        echo -e "${DIM}mkdniimg:            Found ($MKDNIIMG_OVERRIDE)${NC}"
+    else
+        echo -e "${YELLOW}mkdniimg:            Not found! Repack step will fail unless it is compiled.${NC}"
+    fi
+
     echo -e "${DIM}WORK_DIR:            $WORK_DIR${NC}"
     echo -e "${DIM}TEST_WORK_DIR:       $TEST_WORK_DIR${NC}"
     echo -e "${DIM}ROOTFS_EXTRACT_DIR:  $ROOTFS_EXTRACT_DIR${NC}"
@@ -178,7 +190,7 @@ prompt() {   # prompt <varname> <question> [default]   — returns 130 on Ctrl+C
 require_script() {   # require_script <name> -> prints path or returns 1
     local name="$1" path="$SCRIPTS_DIR/$1"
     if [ ! -f "$path" ]; then
-        err "$path not found. All four scripts must be in ./$SCRIPTS_DIR/"
+        err "$path not found. Expected in ./$SCRIPTS_DIR/"
         return 1
     fi
     if [ ! -x "$path" ]; then
