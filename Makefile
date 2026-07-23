@@ -20,6 +20,8 @@ tools:
 	$(MAKE) -C tools/squashfs
 	@echo "Building squashfs4 tools..."
 	$(MAKE) -C tools/squashfs4
+	@echo "Building firmware-utils tools..."
+	$(MAKE) -C tools/firmware-utils
 
 
 clean:
@@ -28,3 +30,4 @@ clean:
 	$(MAKE) -C tools/xz clean
 	$(MAKE) -C tools/squashfs clean
 	$(MAKE) -C tools/squashfs4 clean
+	$(MAKE) -C tools/firmware-utils clean
