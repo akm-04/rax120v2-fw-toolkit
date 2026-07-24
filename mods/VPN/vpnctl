@@ -1,0 +1,285 @@
+#!/bin/sh
+# vpnctl -- unified CLI for operating/debugging the custom VPN client.
+#
+# Deliberately a thin wrapper: every real action still goes through the
+# existing backend scripts (wg_update_config.sh, vpn_ctrl.sh, etc.) --
+# this doesn't duplicate their logic, it adds pre-flight checks and
+# human-readable output on top, and gives telnet debugging one entry
+# point instead of five separately-remembered script paths and a
+# by-hand diagnostic command sequence.
+#
+# Symlinked to /usr/bin/vpnctl by the packaging script so it's callable
+# from anywhere over telnet without cd'ing into /etc/vpn_client first.
+
+VPN_DIR=/etc/vpn_client
+CONFIG=/bin/config
+. "${VPN_DIR}/vpn_common.env"
+. "${VPN_DIR}/wireguard_client.env"
+. "${VPN_DIR}/ovpn_client_custom.env"
+
+usage()
+{
+	cat <<-EOF >&2
+	vpnctl -- unified control for the custom VPN client
+
+	  vpnctl save-config <file> [wireguard|openvpn]    Parse+save a config
+	                                                   (protocol inferred from
+	                                                   .conf/.ovpn if omitted)
+	  vpnctl protocol [wireguard|openvpn]              Show, or set, active protocol
+	  vpnctl scope [global|<if1> <if2> ...]            Show, or set, which interfaces
+	                                                    the active protocol applies to
+	  vpnctl start | stop | restart                    Connect / disconnect / reconnect
+	  vpnctl status                                    Quick status
+	  vpnctl table                                     Active routing/mark state (both protocols)
+	  vpnctl doctor                                    Full diagnostic dump
+	  vpnctl log [-f]                                  Show (or follow) the active log
+	EOF
+	exit 1
+}
+
+active_protocol()
+{
+	case "$($CONFIG get ${NVK_ACTIVE_PROTOCOL})" in
+		openvpn) echo "openvpn" ;;
+		*)       echo "wireguard" ;;
+	esac
+}
+
+configured_check()
+{
+	if [ "$(active_protocol)" = "wireguard" ]; then
+		[ "$($CONFIG get ${NVK_CONFIGURED})" = "1" ]
+	else
+		[ "$($CONFIG get ${NVK_OVPN_CONFIGURED})" = "1" ]
+	fi
+}
+
+cmd_save_config()
+{
+	FILE="$1"
+	PROTO="$2"
+
+	[ -n "$FILE" ] || { echo "vpnctl save-config: missing file path" >&2; usage; }
+	[ -f "$FILE" ] || { echo "ERROR: $FILE not found" >&2; exit 1; }
+
+	if [ -z "$PROTO" ]; then
+		case "$FILE" in
+			*.ovpn) PROTO="openvpn" ;;
+			*.conf) PROTO="wireguard" ;;
+			*)
+				echo "ERROR: cannot infer protocol from '$FILE' -- specify it: vpnctl save-config $FILE wireguard|openvpn" >&2
+				exit 1
+				;;
+		esac
+	fi
+
+	case "$PROTO" in
+		wireguard) "${VPN_DIR}/wg_update_config.sh" "$FILE" ;;
+		openvpn)   "${VPN_DIR}/ovpn_update_config.sh" "$FILE" ;;
+		*)
+			echo "ERROR: unknown protocol '$PROTO' (expected wireguard|openvpn)" >&2
+			exit 1
+			;;
+	esac
+}
+
+cmd_protocol()
+{
+	if [ -z "$1" ]; then
+		active_protocol
+		return
+	fi
+	case "$1" in
+		wireguard|openvpn)
+			$CONFIG set ${NVK_ACTIVE_PROTOCOL}="$1"
+			$CONFIG commit
+			echo "Active protocol set to $1. Run 'vpnctl restart' to apply."
+			;;
+		*)
+			echo "ERROR: protocol must be wireguard or openvpn" >&2
+			exit 1
+			;;
+	esac
+}
+
+cmd_scope()
+{
+	PROTO=$(active_protocol)
+	if [ "$PROTO" = "wireguard" ]; then KEY="$NVK_SCOPE_IFACES"; else KEY="$NVK_OVPN_SCOPE_IFACES"; fi
+
+	if [ $# -eq 0 ] || [ "$1" = "show" ]; then
+		VAL=$($CONFIG get "$KEY")
+		echo "Scope for $PROTO: ${VAL:-whole-router}"
+		return
+	fi
+
+	if [ "$1" = "global" ]; then
+		$CONFIG set "$KEY"=""
+		echo "Scope for $PROTO set to: whole-router. Run 'vpnctl restart' to apply."
+		$CONFIG commit
+		return
+	fi
+
+	# validate against the shared list in vpn_common.env -- catches typos/
+	# mistaken keywords (like 'show' before this fix existed) before they
+	# become a silent no-op physdev rule for an interface that doesn't
+	for ifc in "$@"; do
+		case " $VPN_KNOWN_SCOPE_IFACES " in
+			*" $ifc "*) : ;;
+			*)
+				echo "ERROR: '$ifc' is not a known interface (expected one of: $VPN_KNOWN_SCOPE_IFACES)" >&2
+				exit 1
+				;;
+		esac
+	done
+
+	$CONFIG set "$KEY"="$*"
+	$CONFIG commit
+	echo "Scope for $PROTO set to: $*. Run 'vpnctl restart' to apply."
+}
+
+cmd_start()
+{
+	PROTO=$(active_protocol)
+	if ! configured_check; then
+		echo "ERROR: no $PROTO config saved yet. Run 'vpnctl save-config <file>' first." >&2
+		exit 1
+	fi
+	echo "Starting $PROTO..."
+	"${VPN_DIR}/vpn_ctrl.sh" connect
+}
+
+cmd_stop()
+{
+	echo "Stopping..."
+	"${VPN_DIR}/vpn_ctrl.sh" disconnect
+}
+
+cmd_restart()
+{
+	PROTO=$(active_protocol)
+	if ! configured_check; then
+		echo "ERROR: no $PROTO config saved yet. Run 'vpnctl save-config <file>' first." >&2
+		exit 1
+	fi
+	echo "Restarting $PROTO..."
+	"${VPN_DIR}/vpn_ctrl.sh" reconnect
+}
+
+cmd_status()
+{
+	"${VPN_DIR}/vpn_ctrl.sh" status
+}
+
+cmd_table()
+{
+	echo "== active routing state ===================================="
+	echo "Active protocol : $(active_protocol)"
+	echo
+	echo "-- mark rules (mangle PREROUTING) --"
+	iptables -t mangle -L PREROUTING -n -v
+	echo
+	echo "-- dns hijack rules (nat PREROUTING) --"
+	iptables -t nat -L PREROUTING -n -v --line-numbers 
+	echo
+	echo "-- ip rule --"
+	ip rule show
+	echo
+	echo "-- table ${vpn_rt_table} (mark ${vpn_fwmark} target) --"
+	ip route show table "$vpn_rt_table"
+	echo
+	echo "-- wg0 forward/nat --"
+	iptables -L FORWARD -v -n | grep "$wg_iface"
+	iptables -t nat -L POSTROUTING -v -n | grep "$wg_iface"
+	echo
+	echo "-- tun90 (openvpn) forward/nat --"
+	iptables -L FORWARD -v -n | grep "$ovpn_iface"
+	iptables -t nat -L POSTROUTING -v -n | grep "$ovpn_iface"
+	echo "============================================================"
+}
+
+cmd_doctor()
+{
+	PROTO=$(active_protocol)
+	if [ "$PROTO" = "wireguard" ]; then TUN="$wg_iface"; else TUN="$ovpn_iface"; fi
+
+	echo "== vpnctl doctor =========================================="
+	echo "Active protocol : $PROTO"
+	echo "Configured      : $(configured_check && echo yes || echo no)"
+	echo "Auto-start      : $($CONFIG get ${NVK_AUTO_ENABLE})"
+	if [ "$PROTO" = "wireguard" ]; then
+		echo "Scope           : $($CONFIG get ${NVK_SCOPE_IFACES})"
+	else
+		echo "Scope           : $($CONFIG get ${NVK_OVPN_SCOPE_IFACES})"
+	fi
+	echo
+	echo "-- interface --"
+	ip link show "$TUN" 2>&1
+	echo
+	if [ "$PROTO" = "wireguard" ]; then
+		echo "-- wg show --"
+		wg show "$TUN" 2>&1
+	else
+		echo "-- openvpn pid / log tail --"
+		echo "pid file: $(cat "$ovpn_client_pid_file" 2>/dev/null || echo none)"
+		tail -n 15 "$ovpn_client_log_file" 2>/dev/null
+	fi
+	echo
+	echo "-- mark/physdev rules --"
+	iptables -t mangle -L PREROUTING -n -v
+	echo
+	echo "-- dns hijack rules (nat PREROUTING) --"
+	iptables -t nat -L PREROUTING -n -v --line-numbers
+	echo
+	echo "-- ip rule / table $vpn_rt_table --"
+	ip rule show | grep "$vpn_fwmark"
+	ip route show table "$vpn_rt_table"
+	echo
+	echo "-- forward/nat for $TUN --"
+	iptables -L FORWARD -v -n | grep "$TUN"
+	iptables -t nat -L POSTROUTING -v -n | grep "$TUN"
+	echo
+	echo "-- applied_scope state file --"
+	if [ "$PROTO" = "wireguard" ]; then
+		cat "${wg_client_data_dir}/applied_scope" 2>/dev/null || echo "(none)"
+	else
+		cat "${ovpn_client_data_dir}/applied_scope" 2>/dev/null || echo "(none)"
+	fi
+	echo
+	echo "-- watchdog --"
+	if [ -f "$wg_watchdog_pid_file" ] && [ -e "/proc/$(cat "$wg_watchdog_pid_file" 2>/dev/null)" ]; then
+		echo "running, pid $(cat "$wg_watchdog_pid_file")"
+	else
+		echo "not running"
+	fi
+	echo "============================================================"
+}
+
+cmd_log()
+{
+	if [ "$(active_protocol)" = "wireguard" ]; then LOGFILE="$wg_client_log_file"; else LOGFILE="$ovpn_client_log_file"; fi
+	if [ "$1" = "-f" ]; then
+		tail -f "$LOGFILE"
+	else
+		[ -s "$LOGFILE" ] && tail -n 50 "$LOGFILE" || echo "(no log output yet)"
+	fi
+}
+
+[ $# -ge 1 ] || usage
+CMD="$1"; shift
+case "$CMD" in
+	save-config) cmd_save_config "$@" ;;
+	protocol)    cmd_protocol "$@" ;;
+	scope)       cmd_scope "$@" ;;
+	start)       cmd_start ;;
+	stop)        cmd_stop ;;
+	restart)     cmd_restart ;;
+	status)      cmd_status ;;
+	table)       cmd_table ;;
+	doctor)      cmd_doctor ;;
+	log)         cmd_log "$@" ;;
+	*)
+		echo "ERROR: unknown command '$CMD'" >&2
+		usage
+		;;
+esac

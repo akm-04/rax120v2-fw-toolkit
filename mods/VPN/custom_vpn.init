@@ -1,0 +1,70 @@
+#!/bin/sh /etc/rc.common
+# etc/init.d/custom_vpn
+# Boot-time control for the custom VPN client (WireGuard or OpenVPN,
+# dispatched via /etc/vpn_client/vpn_ctrl.sh).
+#
+# Uses the #!/bin/sh /etc/rc.common convention (not a plain #!/bin/sh with
+# a manual case dispatcher) because this firmware's boot process invokes
+# /etc/rc.d/S* scripts with the argument 'boot' (see /etc/inittab:
+# "::sysinit:/etc/init.d/rcS S boot"), and only rc.common's own dispatch
+# machinery knows to turn that into a call to boot() below. A manual
+# case "$1" in start|stop) dispatcher (the previous version of this
+# script) has no 'boot' case, so it silently did nothing at boot --
+# confirmed by testing against the iperf3 mod, which uses this exact
+# pattern and is proven to run on every boot.
+START=61
+
+VPN_DIR=/etc/vpn_client
+CONFIG=/bin/config
+
+. "${VPN_DIR}/vpn_common.env"
+
+start()
+{
+	# watchdog is started by wg_ctrl.sh itself as part of a successful
+	# WireGuard connect (it's WireGuard-specific -- kernel-resident and
+	# stateless, needs external supervision; OpenVPN is a stateful
+	# userspace daemon with its own keepalive/reconnect logic and
+	# doesn't need or get one), so nothing extra needed here beyond
+	# calling connect.
+	if [ "$($CONFIG get ${NVK_AUTO_ENABLE})" = "1" ]; then
+		"${VPN_DIR}/vpn_ctrl.sh" connect >/dev/null 2>&1
+	fi
+}
+
+stop()
+{
+	# disconnect (whichever protocol is active) also kills the watchdog
+	# itself if it was running -- see wg_ctrl.sh/ovpn_ctrl.sh do_disconnect
+	"${VPN_DIR}/vpn_ctrl.sh" disconnect >/dev/null 2>&1
+}
+
+boot()
+{
+	# NVRAM-configurable boot delay, self-healing: if empty or not a
+	# plain non-negative integer (covers a clean boot with no NVRAM
+	# entry yet, or any garbage value), fall back to a default and
+	# persist it -- so the NEXT boot reads a valid value directly rather
+	# than re-deriving the default every time. Seconds, not minutes --
+	# feeds straight into `sleep` with no conversion, and avoids any
+	# "is this 3 minutes or 3 seconds" ambiguity in the stored value.
+	DELAY=$($CONFIG get ${NVK_BOOT_DELAY})
+	case "$DELAY" in
+		''|*[!0-9]*)
+			DELAY=150
+			$CONFIG set ${NVK_BOOT_DELAY}="$DELAY"
+			$CONFIG commit
+			;;
+	esac
+
+	# background it -- module load + potentially slow VPN negotiation
+	# (real-world testing showed openvpn configs with multiple remote
+	# fallbacks taking well over a minute) shouldn't hold up the rest
+	# of the boot sequence. Delaying the whole start() call also delays
+	# the watchdog's startup, since wg_ctrl.sh only spawns it as part of
+	# a successful WireGuard connect -- nothing here manages the
+	# watchdog directly anymore, but the delay still means it won't be
+	# running (and retry-storming) during the wait either way.
+	( sleep "$DELAY"; start ) &
+}
+

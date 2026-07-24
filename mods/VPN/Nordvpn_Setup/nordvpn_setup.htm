@@ -1,0 +1,54 @@
+<% http_header("style/form.css", "/funcs.js", "/nordvpn_setup.js") %>
+<% nobody_header("nordvpn_setup.htm", "nordvpn_setup") %>
+<div id="black_over_lay" class="black_overlay"></div>
+<div class="page_title">Setup NordVPN</div>
+<div id="main" class="main" style="top: 40px;">
+<div style="padding: 12px 15px; box-sizing: border-box; max-width: 100%;">
+
+<div>
+    <span class="subhead">API Key:</span>
+    <span id="nordvpn_status_badge" class="gray_choice_font">Checking...</span>
+    <span id="nordvpn_toggle_key" class="linktype" style="cursor:pointer; margin-left:10px;">Change</span>
+    <span id="nordvpn_reset_link" class="linktype" style="display:none; cursor:pointer; margin-left:10px;">Reset</span>
+</div>
+
+<div id="nordvpn_key_field" style="display:none; margin-top:10px;">
+    <input type="password" id="nordvpn_token_input" style="width:100%; max-width:320px; box-sizing:border-box;" placeholder="Paste NordVPN access token" autocomplete="off">
+    <input class="common_bt" type="button" id="nordvpn_apply_btn" value="Apply" style="margin-top:6px;">
+    <div id="nordvpn_token_status" style="margin-top:6px; font-size:12px; min-height:16px;"></div>
+</div>
+
+<div id="nordvpn_country_section" style="display:none; margin-top:15px;">
+    <!-- Persistent status area for the connect result -- deliberately NOT
+         a transient toast, and deliberately placed ABOVE the search bar:
+         at the popup's small OEM-matched size, a message left at the
+         bottom is invisible without scrolling. Stays visible until the
+         user closes the window or starts another connect. -->
+    <div id="nordvpn_connect_status" style="font-size:13px; min-height:18px; margin-bottom:8px;"></div>
+
+    <input type="text" id="nordvpn_search" style="width:100%; max-width:320px; box-sizing:border-box; margin-bottom:8px;" placeholder="Search countries...">
+
+    <div id="nordvpn_country_status" style="font-size:12px; margin-bottom:6px; min-height:16px;"></div>
+
+    <div style="width:100%; overflow-x:auto;">
+    <table class="tables" style="width:100%; min-width:320px;">
+        <thead>
+            <tr class="table_header">
+                <td class="thead1"><span id="nordvpn_sort_name" class="linktype" style="cursor:pointer;">Country</span></td>
+                <td class="thead" style="width:64px;"><span id="nordvpn_sort_ping" class="linktype" style="cursor:pointer;">Ping</span></td>
+                <td style="width:90px;"></td>
+            </tr>
+        </thead>
+        <tbody id="nordvpn_country_tbody"></tbody>
+    </table>
+    </div>
+</div>
+
+</div>
+</div>
+</form>
+</BODY>
+<script>
+loadvalue();
+</script>
+</HTML>

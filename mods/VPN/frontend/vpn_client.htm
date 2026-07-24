@@ -1,0 +1,751 @@
+<% http_header("style/form.css", "/funcs.js", "/base64.js") %>
+<% body_header("_vpn_client", "vpn_client.htm", "vpn_client") %>
+<style>
+.vpn_title { font-weight:bold; margin-bottom: 5px; margin-top: 10px; }
+.vpn_input input, .vpn_input select { width: 50%; padding: 6px; }
+.top20 { margin-top:20px; }
+.vpn_status { margin-right:30px; float:left; margin-bottom: 10px; width: 100%;}
+.vpn_status_name { font-weight:bold; margin-right:10px; float:left; width: 100px; }
+.vpn_status_value { float:left; font-family: monospace; font-size: 14px;}
+.status_head { width: 100px; float:left; font-weight:bold; }
+#status_info { float:left; font-weight:bold; }
+.log_viewer { width: 100%; height: 250px; background: #1e1e1e; color: #0f0; font-family: monospace; font-size: 12px; padding: 10px; border-radius: 4px; box-sizing: border-box; resize: vertical; margin-top: 10px; }
+.scope_row { margin-top:8px; }
+.scope_warn { color:#b8860b; font-weight:bold; margin-top:8px; display:none; }
+#scope_iface_details { margin-top:8px; }
+#scope_iface_details .scope_row { margin-left:22px; }
+</style>
+<script>
+var pollTimer = null;
+var logTimer = null;
+
+// Pull saved variables via Netgear backend macros
+var savedProtocol  = "<% cfg_get("vpn_client_active_protocol") %>" || "wireguard";
+var savedUser      = "<% cfg_sed_xss("vpn_client_custom_user") %>";
+var autoStart      = "<% cfg_get("vpn_client_auto_enable") %>";
+var savedBootDelay = "<% cfg_get("vpn_client_boot_delay_sec") %>";
+var hasWgConf      = "<% cfg_get("vpn_client_wg_configured") %>";
+var hasOvpnConf    = "<% cfg_get("vpn_client_custom_ovpn_configured") %>";
+var savedWgScope   = "<% cfg_sed_xss("vpn_client_wg_scope_ifaces") %>";
+var savedOvpnScope = "<% cfg_sed_xss("vpn_client_custom_ovpn_scope_ifaces") %>";
+var guestEnabled   = "<% cfg_get("guest_enable") %>";
+var savedAutoStart = (autoStart === "1");
+// "0" is this key's explicit-clear sentinel (see NVK_SCOPE_DNS's comment
+// in vpn_common.env) -- normalize it to "" here so the input field and
+// dirty-checking both treat it the same as truly unset
+var savedCustomDnsRaw = "<% cfg_sed_xss("vpn_client_scope_dns") %>";
+var savedCustomDns = (savedCustomDnsRaw === "0") ? "" : savedCustomDnsRaw;
+// populated by fetchWanIfaces() below -- live sysfs bridge membership,
+// not something the page template can bake in at render time, and it
+// can change if WAN gets reassigned to a different physical port
+var wanIfaces = [];
+
+function currentProtocol() {
+    return document.getElementById('protocol_select').value;
+}
+
+function formatBytes(n) {
+    n = parseInt(n, 10);
+    if (!n || n < 0) return '0 B';
+    var units = ['B', 'KiB', 'MiB', 'GiB'];
+    var i = 0;
+    while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
+    return (i === 0 ? n : n.toFixed(2)) + ' ' + units[i];
+}
+
+function updateStatus() {
+    var statusInfo = document.getElementById('status_info');
+    var tunnelIp = document.getElementById('localip');
+    var errLine = document.getElementById('error_line');
+    var connectBtn = document.getElementById('connect_btn');
+
+    // The dropdown can be showing a protocol that isn't actually the one
+    // connected (nothing commits until Apply). Status data from the
+    // backend always belongs to whichever protocol is ACTUALLY active in
+    // NVRAM (savedProtocol, kept in sync by applySettings) -- if that
+    // doesn't match what's currently selected on screen, showing it here
+    // would misleadingly imply the selected protocol is connected when
+    // it's really the other one. Show a clean disconnected view instead;
+    // this is safe regardless of what's really running in the background,
+    // since every do_connect() tears down cleanly first no matter what.
+    if (currentProtocol() !== savedProtocol) {
+        statusInfo.innerHTML = "Disconnected";
+        statusInfo.style.color = "red";
+        tunnelIp.innerHTML = '-';
+        connectBtn.value = "Connect";
+        document.getElementById('stat_protocol').innerHTML = (currentProtocol() === 'wireguard') ? 'WireGuard' : 'OpenVPN';
+        document.getElementById('stat_scope').innerHTML = scopeGlobalSelected() ? 'Whole Router' : (scopeCheckedInterfaces().join(', ') || 'Whole Router');
+        document.getElementById('stat_endpoint').innerHTML = '-';
+        document.getElementById('stat_handshake_row').style.display = 'none';
+        document.getElementById('stat_transfer_row').style.display = 'none';
+        document.getElementById('stat_server_row').style.display = 'none';
+        errLine.style.display = "none";
+        return;
+    }
+
+    var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var timeoutId = controller ? setTimeout(function() { controller.abort(); }, 8000) : null;
+
+    fetch('/cgi-bin/vpn_ctrl.mod?action=status', controller ? { signal: controller.signal } : {})
+        .then(function(r) {
+            if (timeoutId) clearTimeout(timeoutId);
+            return r.json();
+        })
+        .then(function(d) {
+            if (d.status === 'connected') {
+                statusInfo.innerHTML = "Connected";
+                statusInfo.style.color = "green";
+                tunnelIp.innerHTML = d.tunnel_ip || '-';
+                connectBtn.value = "Disconnect";
+            } else if (d.status === 'connecting') {
+                statusInfo.innerHTML = "Connecting...";
+                statusInfo.style.color = "orange";
+                tunnelIp.innerHTML = d.tunnel_ip || '-';
+                connectBtn.value = "Disconnect";
+            } else if (d.status === 'stale') {
+                statusInfo.innerHTML = "No handshake (stale)";
+                statusInfo.style.color = "orange";
+                tunnelIp.innerHTML = d.tunnel_ip || '-';
+                connectBtn.value = "Disconnect";
+            } else {
+                statusInfo.innerHTML = "Disconnected";
+                statusInfo.style.color = "red";
+                tunnelIp.innerHTML = '-';
+                connectBtn.value = "Connect";
+            }
+
+            // client-side info -- already known, no backend round trip needed
+            document.getElementById('stat_protocol').innerHTML = (currentProtocol() === 'wireguard') ? 'WireGuard' : 'OpenVPN';
+            document.getElementById('stat_scope').innerHTML = scopeGlobalSelected() ? 'Whole Router' : (scopeCheckedInterfaces().join(', ') || 'Whole Router');
+
+            // backend-supplied stats -- shape differs slightly by protocol
+            // (WireGuard has byte counters via `wg show dump`, OpenVPN's
+            // don't without adding a --status file, not currently emitted)
+            document.getElementById('stat_endpoint').innerHTML = d.endpoint || '-';
+
+            if (d.status === 'connected' || d.status === 'stale') {
+                if (typeof d.handshake_age !== 'undefined') {
+                    document.getElementById('stat_handshake_row').style.display = '';
+                    document.getElementById('stat_handshake').innerHTML = d.handshake_age + 's ago';
+                } else {
+                    document.getElementById('stat_handshake_row').style.display = 'none';
+                }
+                if (typeof d.rx_bytes !== 'undefined') {
+                    document.getElementById('stat_transfer_row').style.display = '';
+                    document.getElementById('stat_transfer').innerHTML = '↓ ' + formatBytes(d.rx_bytes) + ' / ↑ ' + formatBytes(d.tx_bytes);
+                } else {
+                    document.getElementById('stat_transfer_row').style.display = 'none';
+                }
+                if (d.server_name) {
+                    document.getElementById('stat_server_row').style.display = '';
+                    document.getElementById('stat_server').innerHTML = d.server_name;
+                } else {
+                    document.getElementById('stat_server_row').style.display = 'none';
+                }
+            } else {
+                document.getElementById('stat_handshake_row').style.display = 'none';
+                document.getElementById('stat_transfer_row').style.display = 'none';
+                document.getElementById('stat_server_row').style.display = 'none';
+            }
+
+            if (d.error) {
+                errLine.innerHTML = "<td nowrap colspan=2 style='color:red; font-weight:bold;'>" + d.error + "</td>";
+                errLine.style.display = "";
+            } else {
+                errLine.style.display = "none";
+            }
+        })
+        .catch(function() {
+            if (timeoutId) clearTimeout(timeoutId);
+            statusInfo.innerHTML = "Status check failed (retrying...)";
+            statusInfo.style.color = "red";
+            tunnelIp.innerHTML = '-';
+            document.getElementById('stat_handshake_row').style.display = 'none';
+            document.getElementById('stat_transfer_row').style.display = 'none';
+            document.getElementById('stat_server_row').style.display = 'none';
+        });
+}
+
+function toggleConnect() {
+    var btn = document.getElementById('connect_btn');
+    var action = btn.value === "Connect" ? "connect" : "disconnect";
+
+    function doAction() {
+        document.getElementById('status_info').innerHTML = (action === 'connect' ? 'Connecting...' : 'Disconnecting...');
+        document.getElementById('status_info').style.color = "orange";
+        fetch('/cgi-bin/vpn_ctrl.mod?action=' + action).then(function() { setTimeout(updateStatus, 1500); });
+    }
+
+    if (action === 'connect' && checkDirty()) {
+        // commit pending changes first -- otherwise Connect would act on
+        // whatever protocol/scope was last Applied, not what's currently
+        // selected on screen, which is exactly the bug this fixes
+        var statusDiv = document.getElementById('apply_status');
+        statusDiv.innerHTML = "Applying pending changes before connecting...";
+        statusDiv.style.color = "orange";
+        saveSettings()
+            .then(function(r) { return r.text(); })
+            .then(function(html) {
+                if (html.indexOf('OK:') !== -1) {
+                    advanceBaselines();
+                    statusDiv.innerHTML = "";
+                    doAction();
+                } else {
+                    statusDiv.innerHTML = "Failed to apply settings, connect aborted.";
+                    statusDiv.style.color = "red";
+                }
+            });
+    } else {
+        doAction();
+    }
+}
+
+function currentScopeString() {
+    return scopeGlobalSelected() ? '' : scopeCheckedInterfaces().join(' ');
+}
+
+function currentBootDelayString() {
+    return document.getElementById('boot_delay_input').value.trim();
+}
+
+function currentCustomDnsString() {
+    return document.getElementById('custom_dns_input').value.trim();
+}
+
+// Empty is allowed -- it means "no override, use provider DNS falling
+// back to 1.1.1.1" (see resolve_scope_dns() in vpn_common.env). Anything
+// non-empty must be a plain dotted-quad IPv4 address -- this feeds
+// straight into iptables --to-destination downstream, same reasoning as
+// validBootDelay() below: fail loudly here rather than three scripts later.
+function validCustomDns(v) {
+    if (v === '') return true;
+    var octets = v.split('.');
+    if (octets.length !== 4) return false;
+    for (var i = 0; i < 4; i++) {
+        if (!/^\d{1,3}$/.test(octets[i])) return false;
+        var n = parseInt(octets[i], 10);
+        if (n < 0 || n > 255) return false;
+    }
+    return true;
+}
+
+// Empty is allowed -- it just means "let the backend fall back to its
+// own default" (see custom_vpn.init's boot()), same as a fresh NVRAM
+// with no entry yet. Anything non-empty must be a plain non-negative
+// integer; 0 is a valid delay (no wait at all).
+function validBootDelay(v) {
+    return v === '' || /^[0-9]+$/.test(v);
+}
+
+function checkDirty() {
+    var proto = currentProtocol();
+    var scopeBaseline = (proto === 'wireguard') ? savedWgScope : savedOvpnScope;
+    var dirty = (proto !== savedProtocol)
+        || (currentScopeString() !== (scopeBaseline || ''))
+        || (document.getElementById('auto_start_chk').checked !== savedAutoStart)
+        || (currentBootDelayString() !== (savedBootDelay || ''))
+        || (currentCustomDnsString() !== (savedCustomDns || ''));
+
+    document.getElementById('apply_btn').style.display = dirty ? '' : 'none';
+    return dirty;
+}
+
+function toggleAutoStart() {
+    checkDirty();
+}
+
+// Protocol dropdown, scope checkboxes, auto-start -- all pending until the
+// user explicitly clicks Apply, which is the only thing that calls this.
+function saveSettings() {
+    var proto = currentProtocol();
+    var scope = scopeGlobalSelected() ? '' : scopeCheckedInterfaces().join(' ');
+    var autoEnable = document.getElementById('auto_start_chk').checked ? '1' : '0';
+    var bootDelay = currentBootDelayString();
+    var customDns = currentCustomDnsString();
+
+    if (!validBootDelay(bootDelay)) {
+        // Fail the same way a backend ERROR: would -- callers only ever
+        // check the response text for 'OK:', so a fake same-shaped
+        // response short-circuits the request without a network round
+        // trip while keeping every caller's .then(r => r.text()) intact.
+        return Promise.resolve({ text: function() {
+            return Promise.resolve('ERROR: boot delay must be a whole number of seconds (0 or greater)');
+        } });
+    }
+
+    if (!validCustomDns(customDns)) {
+        return Promise.resolve({ text: function() {
+            return Promise.resolve('ERROR: custom DNS must be a valid IPv4 address (e.g. 9.9.9.9), or empty');
+        } });
+    }
+
+    var body = 'protocol=' + encodeURIComponent(proto)
+        + '&scope_ifaces=' + encodeURIComponent(scope)
+        + '&auto_enable=' + encodeURIComponent(autoEnable)
+        + '&boot_delay_sec=' + encodeURIComponent(bootDelay)
+        + '&custom_dns=' + encodeURIComponent(customDns);
+
+    return fetch('/cgi-bin/vpn_settings.mod', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:body });
+}
+
+function advanceBaselines() {
+    savedProtocol = currentProtocol();
+    savedAutoStart = document.getElementById('auto_start_chk').checked;
+    savedBootDelay = currentBootDelayString();
+    savedCustomDns = currentCustomDnsString();
+    if (currentProtocol() === 'wireguard') {
+        savedWgScope = scopeGlobalSelected() ? '' : scopeCheckedInterfaces().join(' ');
+    } else {
+        savedOvpnScope = scopeGlobalSelected() ? '' : scopeCheckedInterfaces().join(' ');
+    }
+    checkDirty();
+}
+
+function applySettings() {
+    var statusDiv = document.getElementById('apply_status');
+    statusDiv.innerHTML = "Applying...";
+    statusDiv.style.color = "orange";
+
+    saveSettings()
+        .then(function(r) { return r.text(); })
+        .then(function(html) {
+            if (html.indexOf('OK:') !== -1) {
+                statusDiv.innerHTML = "Settings saved. Click Connect/Reconnect to apply to the active tunnel.";
+                statusDiv.style.color = "green";
+                advanceBaselines();
+                updateStatus();
+            } else {
+                statusDiv.innerHTML = html.replace(/^ERROR:\s*/, '') || "Failed to save settings.";
+                statusDiv.style.color = "red";
+            }
+        });
+}
+
+function scopeGlobalSelected() {
+    return document.getElementById('scope_mode_global').checked;
+}
+
+function scopeCheckedInterfaces() {
+    var boxes = document.querySelectorAll('.scope_iface_chk:checked');
+    var out = [];
+    for (var i = 0; i < boxes.length; i++) out.push(boxes[i].value);
+    return out;
+}
+
+function applyWanLock() {
+    var boxes = document.querySelectorAll('.scope_iface_chk');
+    for (var i = 0; i < boxes.length; i++) {
+        if (wanIfaces.indexOf(boxes[i].value) !== -1) {
+            boxes[i].disabled = true;
+            boxes[i].checked = false;
+        }
+    }
+}
+
+function onScopeModeChange() {
+    var isGlobal = scopeGlobalSelected();
+    document.getElementById('scope_iface_details').style.display = isGlobal ? 'none' : '';
+    var boxes = document.querySelectorAll('.scope_iface_chk');
+    for (var i = 0; i < boxes.length; i++) boxes[i].disabled = isGlobal;
+    applyWanLock();
+    checkDirty();
+}
+
+function onScopeCheckboxChange() {
+    checkDirty();
+}
+
+function onProtocolChange() {
+    var proto = currentProtocol();
+    document.getElementById('wg_upload_block').style.display = (proto === 'wireguard') ? '' : 'none';
+    document.getElementById('ovpn_upload_block').style.display = (proto === 'openvpn') ? '' : 'none';
+    document.getElementById('ovpn_creds_block').style.display = (proto === 'openvpn') ? '' : 'none';
+
+    // restore this protocol's own last-saved scope selection for display
+    var scope = (proto === 'wireguard') ? savedWgScope : savedOvpnScope;
+    applyScopeToCheckboxes(scope);
+
+    checkDirty();
+    updateStatus();
+}
+
+function applyScopeToCheckboxes(scope) {
+    var ifaces = scope ? scope.split(/\s+/).filter(Boolean) : [];
+    var boxes = document.querySelectorAll('.scope_iface_chk');
+    for (var i = 0; i < boxes.length; i++) {
+        boxes[i].checked = (ifaces.indexOf(boxes[i].value) !== -1);
+    }
+    var isGlobal = (ifaces.length === 0);
+    document.getElementById('scope_mode_global').checked = isGlobal;
+    document.getElementById('scope_mode_custom').checked = !isGlobal;
+    document.getElementById('scope_iface_details').style.display = isGlobal ? 'none' : '';
+    for (var i = 0; i < boxes.length; i++) boxes[i].disabled = isGlobal;
+    applyWanLock();
+}
+
+function fetchWanIfaces() {
+    fetch('/cgi-bin/vpn_ctrl.mod?action=wan_iface')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            wanIfaces = d.wan_ifaces || [];
+            var boxes = document.querySelectorAll('.scope_iface_chk');
+            for (var i = 0; i < boxes.length; i++) {
+                var lbl = document.querySelector('label[for="' + boxes[i].id + '"]');
+                if (!lbl) continue;
+                if (!lbl.dataset.baseText) lbl.dataset.baseText = lbl.textContent;
+                lbl.textContent = lbl.dataset.baseText + (wanIfaces.indexOf(boxes[i].value) !== -1 ? " (WAN - Disabled)" : "");
+            }
+            applyWanLock();
+        })
+        .catch(function() { /* leave wanIfaces empty -- worst case a stale checkbox gets rejected server-side instead */ });
+}
+
+function uploadConfig() {
+    var proto = currentProtocol();
+    var inputId = (proto === 'wireguard') ? 'wg_file' : 'ovpn_file';
+    var endpoint = (proto === 'wireguard') ? '/cgi-bin/upload_wg.mod' : '/cgi-bin/upload_ovpn.mod';
+    var fieldName = (proto === 'wireguard') ? 'wg_file' : 'ovpn_file';
+    var statusDivId = (proto === 'wireguard') ? 'wg_upload_status' : 'ovpn_upload_status';
+    var statusDiv = document.getElementById(statusDivId);
+
+    var f = document.getElementById(inputId);
+    if (!f.files || !f.files.length) { alert('Select a config file first.'); return; }
+    var fd = new FormData();
+    fd.append(fieldName, f.files[0]);
+
+    statusDiv.innerHTML = "Uploading...";
+    statusDiv.style.color = "orange";
+
+    fetch(endpoint, { method:'POST', body:fd })
+        .then(function(r) { return r.text(); })
+        .then(function(html) {
+            if (html.indexOf('OK:') !== -1) {
+                statusDiv.innerHTML = "Config uploaded and saved.";
+                statusDiv.style.color = "green";
+                refreshLog();
+            } else {
+                statusDiv.innerHTML = html.replace(/^ERROR:\s*/, '') || "Upload failed. Check format.";
+                statusDiv.style.color = "red";
+            }
+        });
+}
+
+function saveCredentials() {
+    var u = document.getElementById('cred_user').value;
+    var p = document.getElementById('cred_pass').value;
+    if (!u) { alert('Enter a username.'); return; }
+
+    var body = 'user=' + encodeURIComponent(u) + '&pass=' + encodeURIComponent(p);
+
+    document.getElementById('auth_status').innerHTML = "Saving...";
+    document.getElementById('auth_status').style.color = "orange";
+
+    fetch('/cgi-bin/vpn_auth.mod', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:body })
+        .then(function(r) { return r.text(); })
+        .then(function(html) {
+            if (html.indexOf('OK:') !== -1) {
+                document.getElementById('auth_status').innerHTML = "Credentials saved to NVRAM.";
+                document.getElementById('auth_status').style.color = "green";
+            } else {
+                document.getElementById('auth_status').innerHTML = "Failed to save credentials.";
+                document.getElementById('auth_status').style.color = "red";
+            }
+        });
+}
+
+function refreshLog() {
+    fetch('/cgi-bin/vpn_log.mod?action=view')
+        .then(function(r) { return r.text(); })
+        .then(function(txt) {
+            var el = document.getElementById('log_content');
+            var isScrolledToBottom = el.scrollHeight - el.clientHeight <= el.scrollTop + 1;
+            el.value = txt;
+            if (isScrolledToBottom) {
+                el.scrollTop = el.scrollHeight;
+            }
+        });
+}
+
+function clearLog() {
+    fetch('/cgi-bin/vpn_log.mod?action=clear')
+        .then(function() {
+            document.getElementById('log_content').value = '(log cleared)';
+        });
+}
+
+function runDebug() {
+    var el = document.getElementById('log_content');
+    el.value += "\n====== Debug Output ======\n";
+    el.value += "Fetching...\n";
+    el.scrollTop = el.scrollHeight;
+
+    fetch('/cgi-bin/vpn_log.mod?action=debug')
+        .then(function(r) { return r.text(); })
+        .then(function(txt) {
+            // replace the "Fetching..." placeholder with the real dump
+            el.value = el.value.replace(/Fetching\.\.\.\n$/, txt.replace(/\n$/, '') + "\n");
+            el.value += "====== END ======\n";
+            el.scrollTop = el.scrollHeight;
+        });
+}
+
+function loadvalue() {
+    document.getElementById('protocol_select').value = (savedProtocol === 'openvpn') ? 'openvpn' : 'wireguard';
+    if (autoStart === "1") document.getElementById('auto_start_chk').checked = true;
+    if (savedUser) document.getElementById('cred_user').value = savedUser;
+    document.getElementById('boot_delay_input').value = savedBootDelay;
+    document.getElementById('custom_dns_input').value = savedCustomDns;
+
+    if (parseInt(hasWgConf) === 1) {
+        document.getElementById('wg_upload_status').innerHTML = "Saved WireGuard config loaded from NVRAM.";
+        document.getElementById('wg_upload_status').style.color = "green";
+    }
+    if (parseInt(hasOvpnConf) === 1) {
+        document.getElementById('ovpn_upload_status').innerHTML = "Saved OpenVPN config loaded from NVRAM.";
+        document.getElementById('ovpn_upload_status').style.color = "green";
+    }
+
+    if (guestEnabled !== "1") {
+        document.getElementById('guest_disabled_warn').style.display = "";
+    }
+    fetchWanIfaces();
+
+    onProtocolChange();   // sets visibility + restores this protocol's scope, without re-saving over the loaded value
+    updateStatus();
+    refreshLog();
+    pollTimer = setInterval(updateStatus, 4000);
+    logTimer = setInterval(refreshLog, 5000);
+}
+</script>
+
+<div class="page_title">Custom VPN Client</div>
+<div class="fix_button" id="fix_button">
+    <table width=100% border=0 cellpadding=0 cellspacing=2>
+        <tr><td nowrap colspan=2 align=center>
+            <input class="apply_bt" type="button" id="apply_btn" value="Apply Settings" style="display:none;" onClick="applySettings();">
+            <input class="apply_bt" type="button" id="connect_btn" value="Connect" onClick="toggleConnect();">
+            <input class="common_key_bt" type="button" id="nordvpn_setup_btn" value="Setup NordVPN" onClick="window.open('nordvpn_setup.htm','nordvpn_setup','width=600,height=400,top=200,left=200,status=yes,resizable=yes');">
+        </td></tr>
+        <tr><td nowrap colspan=2 align=center>
+            <div id="apply_status" style="font-weight:bold; margin-top:5px;"></div>
+        </td></tr>
+    </table>
+</div>
+
+<div id="main" class="main_top_button">
+
+    <!-- 0. Protocol -->
+    <table cellspacing=5 cellPadding=0 width=100% border=0>
+        <tr><td nowrap colspan=2 class="btm0"><b>VPN Protocol</b></td></tr>
+        <tr><td nowrap colspan=2>
+            <div class="vpn_input top20">
+                <select id="protocol_select" onchange="onProtocolChange();">
+                    <option value="wireguard">WireGuard</option>
+                    <option value="openvpn">OpenVPN</option>
+                </select>
+            </div>
+        </td></tr>
+        <tr><td colspan=2 class="top0 btm0">&nbsp;</td></tr>
+        $bluebar
+    </table>
+
+    <!-- 1. Status -->
+    <table cellspacing=5 cellPadding=0 width=100% border=0>
+        <tr><td nowrap><b>Status</b></td></tr>
+        <tr id="error_line" style="display:none;"></tr>
+        <tr>
+            <td nowrap colspan=2 class="top0">
+                <div id="status_div">
+                    <div class="status_head">Connection:</div>
+                    <div id="status_info">Checking...</div>
+                </div>
+            </td>
+        </tr>
+        <tr><td nowrap colspan=2><div class="top20">
+            <div class="vpn_status"><div class="vpn_status_name">Tunnel IP:</div><div id="localip" class="vpn_status_value">-</div></div>
+            <div class="vpn_status"><div class="vpn_status_name">Protocol:</div><div id="stat_protocol" class="vpn_status_value">-</div></div>
+            <div class="vpn_status"><div class="vpn_status_name">Applied To:</div><div id="stat_scope" class="vpn_status_value">-</div></div>
+            <div class="vpn_status"><div class="vpn_status_name">Endpoint:</div><div id="stat_endpoint" class="vpn_status_value">-</div></div>
+            <div class="vpn_status" id="stat_server_row" style="display:none;"><div class="vpn_status_name">Server:</div><div id="stat_server" class="vpn_status_value">-</div></div>
+            <div class="vpn_status" id="stat_handshake_row" style="display:none;"><div class="vpn_status_name">Handshake:</div><div id="stat_handshake" class="vpn_status_value">-</div></div>
+            <div class="vpn_status" id="stat_transfer_row" style="display:none;"><div class="vpn_status_name">Transfer:</div><div id="stat_transfer" class="vpn_status_value">-</div></div>
+        </div></td></tr>
+        <tr><td colspan=2 class="top0 btm0">&nbsp;</td></tr>
+        $bluebar
+    </table>
+
+    <!-- 2. Boot Settings -->
+    <table cellspacing=5 cellPadding=0 width=100% border=0>
+        <tr><td nowrap colspan=2 class="btm0"><b>Boot Settings</b></td></tr>
+        <tr><td nowrap colspan=2>
+            <div class="top20">
+                <input type="checkbox" id="auto_start_chk" onclick="toggleAutoStart();">
+                <label for="auto_start_chk" style="font-weight:bold;">Enable Auto-Connect on Router Boot</label>
+            </div>
+        </td></tr>
+        <tr><td nowrap colspan=2>
+            <div class="top20 vpn_title">Boot Delay (seconds)</div>
+            <div class="vpn_input"><input type="text" id="boot_delay_input" placeholder="150 (default)" maxlength="5" oninput="checkDirty();"></div>
+        </td></tr>
+        <tr><td colspan=2 class="top0 btm0">&nbsp;</td></tr>
+        $bluebar
+    </table>
+
+    <!-- 2b. DNS -->
+    <table cellspacing=5 cellPadding=0 width=100% border=0>
+        <tr><td nowrap colspan=2 class="btm0"><b>DNS</b></td></tr>
+        <tr><td nowrap colspan=2>
+            <div class="top20 vpn_title">Custom DNS Override</div>
+            <div class="vpn_input"><input type="text" id="custom_dns_input" placeholder="e.g. 9.9.9.9 -- leave empty for auto" oninput="checkDirty();"></div>
+            <div style="font-size:12px; color:#666; margin-top:4px;">
+                If set, this DNS is always used, regardless of what your uploaded config/provider supplies.
+                Leave empty to use the DNS your VPN config provides, falling back to 1.1.1.1 if it doesn't provide one.
+            </div>
+        </td></tr>
+        <tr><td colspan=2 class="top0 btm0">&nbsp;</td></tr>
+        $bluebar
+    </table>
+
+    <!-- 3. Upload: WireGuard -->
+    <table cellspacing=5 cellPadding=0 width=100% border=0 id="wg_upload_block">
+        <tr><td nowrap colspan=2 class="btm0"><b>Upload Configuration (.conf)</b></td></tr>
+        <tr><td nowrap colspan=2>
+            <div class="top20">
+                <input type="file" id="wg_file" accept=".conf" style="margin-bottom: 10px;">
+                <br>
+                <input class="common_bt" type="button" value="Upload & Save" onClick="uploadConfig();">
+                <div id="wg_upload_status" style="margin-top:10px; font-weight:bold;"></div>
+            </div>
+        </td></tr>
+        <tr><td colspan=2 class="top0 btm0">&nbsp;</td></tr>
+        $bluebar
+    </table>
+
+    <!-- 3. Upload: OpenVPN -->
+    <table cellspacing=5 cellPadding=0 width=100% border=0 id="ovpn_upload_block" style="display:none;">
+        <tr><td nowrap colspan=2 class="btm0"><b>Upload Configuration (.ovpn)</b></td></tr>
+        <tr><td nowrap colspan=2>
+            <div class="top20">
+                <input type="file" id="ovpn_file" accept=".ovpn" style="margin-bottom: 10px;">
+                <br>
+                <input class="common_bt" type="button" value="Upload & Save" onClick="uploadConfig();">
+                <div id="ovpn_upload_status" style="margin-top:10px; font-weight:bold;"></div>
+            </div>
+        </td></tr>
+        <tr><td colspan=2 class="top0 btm0">&nbsp;</td></tr>
+        $bluebar
+    </table>
+
+    <!-- 4. OpenVPN Credentials (hidden for WireGuard) -->
+    <table cellspacing=5 cellPadding=0 width=100% border=0 id="ovpn_creds_block" style="display:none;">
+        <tr><td nowrap colspan=2 class="btm0"><b>VPN Credentials (only if your config requires them)</b></td></tr>
+        <tr>
+            <td nowrap colspan=2>
+                <div class="vpn_title">Username</div>
+                <div class="vpn_input"><input type="text" id="cred_user" placeholder="OpenVPN Username"></div>
+            </td>
+        </tr>
+        <tr>
+            <td nowrap colspan=2>
+                <div class="top20 vpn_title">Password</div>
+                <div class="vpn_input"><input type="password" id="cred_pass" placeholder="OpenVPN Password"></div>
+            </td>
+        </tr>
+        <tr><td nowrap colspan=2>
+            <input class="common_bt top20" type="button" value="Save Credentials" onClick="saveCredentials();">
+            <div id="auth_status" style="margin-top:10px; font-weight:bold;"></div>
+        </td></tr>
+        <tr><td colspan=2 class="top0 btm0">&nbsp;</td></tr>
+        $bluebar
+    </table>
+
+    <!-- 5. Scope -->
+    <table cellspacing=5 cellPadding=0 width=100% border=0>
+        <tr><td nowrap colspan=2 class="btm0"><b>Apply VPN To</b></td></tr>
+        <tr><td nowrap colspan=2>
+            <div class="top20 scope_row">
+                <input type="radio" name="scope_mode" id="scope_mode_global" checked onclick="onScopeModeChange();">
+                <label for="scope_mode_global" style="font-weight:bold;">Whole Router (all wired + wireless clients)</label>
+            </div>
+            <div class="scope_row">
+                <input type="radio" name="scope_mode" id="scope_mode_custom" onclick="onScopeModeChange();">
+                <label for="scope_mode_custom" style="font-weight:bold;">Specific Network Interfaces</label>
+            </div>
+            <div id="scope_iface_details" style="display:none;">
+                <div style="display:flex; flex-wrap:wrap; gap:20px;">
+                    <div style="flex:1; min-width:180px;">
+                        <div style="font-weight:bold; margin-bottom:4px;">Wireless</div>
+                        <div class="scope_row">
+                            <input type="checkbox" class="scope_iface_chk" value="ath1" id="scope_main24" disabled onclick="onScopeCheckboxChange();">
+                            <label for="scope_main24">Main 2.4GHz</label>
+                        </div>
+                        <div class="scope_row">
+                            <input type="checkbox" class="scope_iface_chk" value="ath11" id="scope_guest24" disabled onclick="onScopeCheckboxChange();">
+                            <label for="scope_guest24">Guest 2.4GHz</label>
+                        </div>
+                        <div class="scope_row">
+                            <input type="checkbox" class="scope_iface_chk" value="ath0" id="scope_main5" disabled onclick="onScopeCheckboxChange();">
+                            <label for="scope_main5">Main 5GHz</label>
+                        </div>
+                        <div class="scope_row">
+                            <input type="checkbox" class="scope_iface_chk" value="ath01" id="scope_guest5" disabled onclick="onScopeCheckboxChange();">
+                            <label for="scope_guest5">Guest 5GHz</label>
+                        </div>
+                        <div id="guest_disabled_warn" class="scope_warn">
+                            Guest WiFi is currently disabled in Wireless settings. Selecting a guest option here won't route
+                            any traffic until Guest WiFi itself is turned on.
+                        </div>
+                    </div>
+                    <div style="border-left:1px solid #ccc; margin:0 4px;"></div>
+                    <div style="flex:1; min-width:180px;">
+                        <div style="font-weight:bold; margin-bottom:4px;">Wired (LAN Ports)</div>
+                        <div class="scope_row">
+                            <input type="checkbox" class="scope_iface_chk" value="eth0" id="scope_eth0" disabled onclick="onScopeCheckboxChange();">
+                            <label for="scope_eth0">eth0</label>
+                        </div>
+                        <div class="scope_row">
+                            <input type="checkbox" class="scope_iface_chk" value="eth1" id="scope_eth1" disabled onclick="onScopeCheckboxChange();">
+                            <label for="scope_eth1">eth1</label>
+                        </div>
+                        <div class="scope_row">
+                            <input type="checkbox" class="scope_iface_chk" value="eth2" id="scope_eth2" disabled onclick="onScopeCheckboxChange();">
+                            <label for="scope_eth2">eth2</label>
+                        </div>
+                        <div class="scope_row">
+                            <input type="checkbox" class="scope_iface_chk" value="eth3" id="scope_eth3" disabled onclick="onScopeCheckboxChange();">
+                            <label for="scope_eth3">eth3</label>
+                        </div>
+                        <div class="scope_row">
+                            <input type="checkbox" class="scope_iface_chk" value="eth4" id="scope_eth4" disabled onclick="onScopeCheckboxChange();">
+                            <label for="scope_eth4">eth4</label>
+                        </div>
+                        <div class="scope_row">
+                            <input type="checkbox" class="scope_iface_chk" value="eth5" id="scope_eth5" disabled onclick="onScopeCheckboxChange();">
+                            <label for="scope_eth5">eth5</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </td></tr>
+        <tr><td colspan=2 class="top0 btm0">&nbsp;</td></tr>
+        $bluebar
+    </table>
+
+    <!-- 6. Log -->
+    <table cellspacing=5 cellPadding=0 width=100% border=0>
+        <tr><td nowrap colspan=2 class="btm0"><b>Connection Log</b></td></tr>
+        <tr><td nowrap colspan=2>
+            <div class="top20">
+                <textarea id="log_content" class="log_viewer" readonly></textarea>
+                <br>
+                <input class="common_bt top20" type="button" value="Clear Log" onClick="clearLog();">
+                <input class="common_bt top20" type="button" value="Debug" onClick="runDebug();">
+            </div>
+        </td></tr>
+        <tr><td colspan=2 class="top0 btm0">&nbsp;</td></tr>
+    </table>
+
+</div>
+
+<script>loadvalue();</script>
+<% body_footer() %>
