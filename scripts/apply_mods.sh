@@ -55,6 +55,16 @@
 # same dry-run-first, same "already applied" detection -- just invoked for
 # one patch, on demand, instead of the whole mods/ batch.
 #
+# FILE COPIES -- for staging a file/binary/directory from outside the
+# rootfs (a vendored binary sitting under mods/, a GPL-src-tree path, etc.)
+# into the rootfs tree, with no patch semantics involved. Call:
+#
+#   copy_mod_file <dest_dir_in_rootfs> <src> [<src> ...]
+#
+# from anywhere in a script's own body -- same calling convention as
+# apply_mod_patch, also exported for the same reason. See copy_mod_file's
+# own definition below for the exact source-resolution and globbing rules.
+#
 # After all scripts finish, apply_mods.sh does one more pass over every
 # .manual.patch: if a dry-run shows it would STILL apply cleanly (i.e. it
 # was never actually applied), that's a WARNING -- likely a forgotten
@@ -96,7 +106,19 @@ warn()  { echo -e "${C_YELLOW}!${C_RESET} ${1}"; }
 fail()  { echo -e "${C_RED}✗ ${1}${C_RESET}"; exit 1; }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# PROJECT_ROOT: honor RAX120_PROJECT_ROOT if rax120-toolkit.sh (or any
+# other wrapper) exported it -- same override pattern as RAX120_BIN_DIR /
+# RAX120_WORK_DIR in _lib_toolpath.sh. Falls back to deriving it from this
+# script's own location, same as before, when nothing's exported. This is
+# what MODS_DIR's default and APPLY_PATCHES are both built from below, so
+# a wrapper-exported override cascades to copy_mod_file's src resolution
+# too without anything else needing to change.
+if [ -n "${RAX120_PROJECT_ROOT:-}" ]; then
+    PROJECT_ROOT="$RAX120_PROJECT_ROOT"
+else
+    PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+fi
 
 ROOTFS_DIR="${1:?Usage: apply_mods.sh <rootfs_dir> [mods_dir]}"
 MODS_DIR="${2:-$PROJECT_ROOT/mods}"
@@ -149,6 +171,87 @@ apply_mod_patch() {
     fi
 }
 export -f apply_mod_patch
+
+# copy_mod_file <dest_dir> <src> [<src> ...]
+#
+# Companion to apply_mod_patch, same underlying reason: cwd during a mod
+# script's run is ROOTFS_DIR (see the cd below), not MODS_DIR and not
+# wherever the script itself lives, so a script can't just write bare
+# relative source paths and expect them to land on the right file without
+# this resolving them somewhere sane first.
+#
+# <dest_dir>  -- directory inside ROOTFS_DIR to copy into (never a target
+#                filename -- copy_mod_file always copies *into* a
+#                directory). Leading/trailing '/' are cosmetic and
+#                stripped, so "/etc/init.d", "etc/init.d", and
+#                "etc/init.d/" all resolve identically. Created with
+#                mkdir -p if it doesn't already exist.
+#
+# <src> ...   -- one or more source paths, each of which may itself be a
+#                glob. Resolution per src, checked in this order:
+#                  1. looks absolute (leading '/') AND actually exists at
+#                     that literal path right now -> used as-is (e.g. a
+#                     path out in some GPL-src tree, entirely outside this
+#                     repo)
+#                  2. anything else -- bare relative, or '/'-led but not
+#                     found at that literal absolute path -- resolved
+#                     against MODS_DIR instead (a leading '/', if any, is
+#                     stripped first), so "wg" and "/wg" both mean
+#                     "$MODS_DIR/wg"
+#                Each src is then glob-expanded (nullglob) against its
+#                resolved form, so e.g. "wireguard/*" -- which would
+#                silently fail to expand against the real cwd, ROOTFS_DIR
+#                -- expands correctly against MODS_DIR instead. Multiple
+#                src arguments, and/or a single glob matching multiple
+#                files, both work. A src matching nothing is an error, not
+#                a silent no-op.
+#
+# Copies with `cp -a` -- preserves mode/timestamps, copies symlinks as
+# symlinks instead of dereferencing them, recurses into directories.
+# Ownership preservation is best-effort only: unlike unpack_rootfs.sh's
+# fakeroot session, this runs unprivileged, so cp will warn and just keep
+# the invoking user's ownership on anything it can't chown -- not fatal.
+copy_mod_file() {
+    local dest="${1:?copy_mod_file: missing dest dir}"
+    shift
+    local -a srcs=("$@")
+    [ "${#srcs[@]}" -gt 0 ] || { echo "copy_mod_file: missing source(s)" >&2; return 1; }
+
+    dest="${dest%/}"; dest="${dest#/}"
+    local dest_path="$ROOTFS_DIR/$dest"
+    mkdir -p "$dest_path" || { echo "copy_mod_file: failed to create $dest_path" >&2; return 1; }
+
+    local raw resolved
+    for raw in "${srcs[@]}"; do
+        if [[ "$raw" == /* ]] && [ -e "$raw" ]; then
+            resolved="$raw"
+        else
+            resolved="$MODS_DIR/${raw#/}"
+        fi
+
+        # Unquoted on purpose -- this is the glob-expansion step. nullglob
+        # drops a glob pattern that matches nothing instead of passing it
+        # through literally; the explicit -e re-check after the loop
+        # catches the other case, a plain (non-glob) path that just
+        # doesn't exist -- nullglob alone doesn't apply to those, so
+        # without this they'd otherwise slip through to cp and fail there
+        # instead of being reported the same way as a dead glob.
+        local -a matches=() __m
+        shopt -s nullglob
+        for __m in $resolved; do
+            [ -e "$__m" ] && matches+=("$__m")
+        done
+        shopt -u nullglob
+
+        if [ "${#matches[@]}" -eq 0 ]; then
+            echo "copy_mod_file: no match for '$raw' (resolved: $resolved)" >&2
+            return 1
+        fi
+
+        cp -a "${matches[@]}" "$dest_path"/ || { echo "copy_mod_file: cp failed for '$raw'" >&2; return 1; }
+    done
+}
+export -f copy_mod_file
 
 if [ ! -d "$MODS_DIR" ]; then
     info "$MODS_DIR not found -- nothing to apply, skipping."

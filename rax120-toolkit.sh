@@ -10,6 +10,17 @@ set -uo pipefail
 
 SCRIPTS_DIR="scripts"
 
+# RAX120_PROJECT_ROOT: exported so apply_mods.sh (and anything else that
+# wants it -- see PROJECT_ROOT resolution in apply_mods.sh, which prefers
+# this over deriving its own project root from its file location) can key
+# off the SAME root this wrapper is using. Same "wherever this wrapper is
+# launched from" root as everything else below (SCRIPTS_DIR, BIN_DIR,
+# MODS_DIR, ...) -- not derived from this file's own location, since the
+# header comment above already documents cwd-at-launch as the project
+# root by design.
+export RAX120_PROJECT_ROOT
+RAX120_PROJECT_ROOT="$(pwd)"
+
 BIN_DIR="${BIN_DIR_OVERRIDE:-bin}"
 if [ -d "$BIN_DIR" ]; then
     export RAX120_BIN_DIR
