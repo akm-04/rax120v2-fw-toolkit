@@ -86,7 +86,55 @@ echo
 resolve_fakeroot_state FAKEROOT_STATE "${SRC_DIR%/}.fakeroot.state"
 if [ -f "$FAKEROOT_STATE" ]; then
     ok "Found matching fakeroot state: $FAKEROOT_STATE"
-    FAKEROOT_ARGS=(-i "$FAKEROOT_STATE")
+
+    # Stale-entry guard -- fakeroot's -s/-i state is keyed purely by
+    # (dev,ino), not by path. It was captured once at unpack_rootfs.sh time;
+    # anything added under $SRC_DIR afterwards (mods, manual edits during a
+    # PAUSED step) is created outside that fakeroot session and has no entry
+    # of its own. If the filesystem later happens to reuse one of the
+    # recorded inode numbers for a brand-new directory, fakeroot -i will
+    # replay the OLD (now-wrong) type/mode for that path, mksquashfs will
+    # try to read it as a file, and fail with "Read failed because Is a
+    # directory" -- silently dropping that whole subtree as an empty file
+    # in the image. A recorded inode can never legitimately be a directory
+    # (real device nodes are always regular files on disk), so drop any
+    # state line whose (dev,ino) currently belongs to a directory. This only
+    # ever removes stale/bogus entries -- genuine device-node entries are
+    # never directories and pass through untouched.
+    declare -A __dirset=()
+    while read -r __d __i; do
+        __dirset["${__d},${__i}"]=1
+    done < <(find "$SRC_DIR" -type d -printf '%D %i\n')
+
+    # Directories are faked too (fakeroot can't really chown to root without
+    # privilege), so most state-file lines are legitimate directory records
+    # (mode=40xxx) -- those are consistent with what's on disk now and must
+    # pass through untouched. Only a line whose RECORDED type is something
+    # other than a directory, but whose (dev,ino) currently IS one, is an
+    # actual stale/colliding entry.
+    FAKEROOT_STATE_SAFE="$(mktemp)"
+    : > "$FAKEROOT_STATE_SAFE"
+    __dropped=0
+    while IFS= read -r __line; do
+        [ -z "$__line" ] && continue
+        __devhex="${__line#dev=}"; __devhex="${__devhex%%,*}"
+        __ino="${__line#*,ino=}"; __ino="${__ino%%,*}"
+        __mode="${__line#*,mode=}"; __mode="${__mode%%,*}"
+        __devdec=$((16#$__devhex))
+        __typebits=$(( (8#$__mode) & 8#170000 ))
+        if [ "$__typebits" -ne $((8#040000)) ] && [ -n "${__dirset[${__devdec},${__ino}]+x}" ]; then
+            __dropped=$((__dropped + 1))
+            continue
+        fi
+        echo "$__line" >> "$FAKEROOT_STATE_SAFE"
+    done < "$FAKEROOT_STATE"
+    unset __dirset
+    if [ "$__dropped" -gt 0 ]; then
+        __plural="entries"; [ "$__dropped" -eq 1 ] && __plural="entry"
+        warn "Dropped $__dropped stale fakeroot state $__plural (recorded as a non-directory, but that inode now belongs to a directory -- likely reused after a mod/edit)."
+    fi
+
+    FAKEROOT_ARGS=(-i "$FAKEROOT_STATE_SAFE")
 else
     warn "No fakeroot state at $FAKEROOT_STATE for this source dir."
     warn "Building without it -- any device nodes in $SRC_DIR/ that only exist"
