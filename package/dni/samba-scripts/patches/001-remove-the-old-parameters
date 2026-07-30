@@ -1,0 +1,13 @@
+--- a/update_smb.c
++++ b/update_smb.c
+@@ -172,9 +172,8 @@ static void add_smbd_global(FILE *fp)
+ 			"  encrypt passwords = yes\n"
+ 			"  name resolve order = lmhosts hosts bcast\n"
+ 			"  smb passwd file = /etc/samba/smbpasswd\n"
+-			"  display charset = UTF-8\n"
+ 			"  unix charset = UTF-8\n"
+-			"  dos charset = UTF-8\n"
++			"  dos charset = CP850\n"
+ 			"  dos filemode = yes\n"
+ 		        "  map to guest = bad user\n"
+         		

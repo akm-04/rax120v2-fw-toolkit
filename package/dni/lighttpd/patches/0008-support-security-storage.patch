@@ -1,0 +1,33 @@
+From 51d6b1dde2f689e66deb98761be2ff131b53b24e Mon Sep 17 00:00:00 2001
+From: "Qiaoling.Huang" <qiaoling.huang@dniserver.dnish.net>
+Date: Wed, 2 Jun 2021 17:21:54 +0800
+Subject: [PATCH] RAX120: Bug 100904 - Add the secure storage
+
+Signed-off-by: Qiaoling.Huang <qiaoling.huang@dniserver.dnish.net>
+---
+ src/server.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/src/server.c b/src/server.c
+index 83c0241..0dd610c 100644
+--- a/src/server.c
++++ b/src/server.c
+@@ -1227,11 +1227,15 @@ static int server_main_setup (server * const srv, int argc, char **argv) {
+ 		return -1;
+ 	}
+ 
++	ntgrcrypt_open();
++	system("/sbin/https_cert_update start");
+ 	if (HANDLER_GO_ON != plugins_call_init(srv)) {
+ 		log_error(srv->errh, __FILE__, __LINE__,
+ 		  "Initialization of plugins failed. Going down.");
++		ntgrcrypt_close();
+ 		return -1;
+ 	}
++	ntgrcrypt_close();
+ 
+ 	/* mod_indexfile should be listed in server.modules prior to dynamic handlers */
+ 	i = 0;
+-- 
+2.7.4
+

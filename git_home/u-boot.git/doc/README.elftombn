@@ -1,0 +1,70 @@
+this readme describes how elftombn.py work , it used to generated uboot.mbn  
+during building the u-boot-single-image , 
+
+elftombn.py call mbn_tools.py to generate mbn files ,
+put these 2 file in same folder to make it work , you can find target scripts 
+from chipcode QSDK-Base/meta-tools/scripts .
+
+command to generate target openwrt-ipq807x-u-boot.mbn file from openwrt-ipq807x-u-boot.elf:
+	python elftombn.py -f openwrt-ipq807x-u-boot.elf -o openwrt-ipq807x-u-boot.mbn
+
+then , flash openwrt-ipq807x-u-boot.mbn to the uboot partiiton according to your DUT ,
+for example , steps to upgrade only uboot partition for RAX120 : 
+======================================
+IPQ807x# setenv ipaddr 192.168.1.1 && setenv serverip 192.168.1.10
+IPQ807x# tftpboot 0x42000000 openwrt-ipq807x-u-boot.mbn
+IPQ807x# nand device 0 && nand erase 0x00d80000 0x00100000
+IPQ807x# nand write $fileaddr 0x00d80000 $filesize
+IPQ807x# reset
+IPQ807x# delenv
+IPQ807x# reset
+
+
+the elf-to-mbn process flow contains following 3 steps :
+1. pboot_gen_elf
+2. image_header
+3. pboot_add_hash
+
+step 1 : generate hash table and phdr file .
+xxx.elf --------> xxx_phdr.pbn , xxx.hash
+	 pboot_gen_elf
+
+step2 : generate the header of hash table
+xxx_phdr.pbn , xxx.hash  -------->   xxx.hash.hd
+			image_header
+
+xxx_combined_hash.mbn = xxx.hash.hd + xxx.hash
+
+xxx.hash.hd is a header file of xxx.hash, it use fixed size 0x28 .
+
+step3 : generate mbn file 
+xxx_phdr.pbn , xxx_combined_hash.mbn ---------> xxx.mbn
+				     pboot_add_hash
+
+use xxx_combined_hash.mbn replace the xxx_phdr.pbn from offset 0x10000
+
+ericwang@hpone:/tmp/ericwang/u-boot$ diff openwrt-ipq807x-u-boot_phdr.pbn.hex openwrt-ipq807x-u-boot.mbn.hex
+257,261c257,261
+< 0001000: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+< 0001010: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+< 0001020: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+< 0001030: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+< 0001040: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+---
+> 0001000: 1500 0000 0300 0000 0000 0000 2800 974a  ............(..J
+> 0001010: a000 0000 a000 0000 c800 974a 0000 0000  ...........J....
+> 0001020: c800 974a 0000 0000 64d5 21fe 34bb 6bab  ...J....d.!.4.k.
+> 0001030: 52af f9c5 42e5 94dd 12af 4d66 3a2e ff88  R...B.....Mf:...
+> 0001040: 6aa1 c93b 1b50 cc77 0000 0000 0000 0000  j..;.P.w........
+263,267c263,267
+< 0001060: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+< 0001070: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+< 0001080: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+< 0001090: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+< 00010a0: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+---
+> 0001060: 0000 0000 0000 0000 7827 f499 ad76 c803  ........x'...v..
+> 0001070: e4f0 62c0 b51b 60a8 158e dc01 74b3 e694  ..b...`.....t...
+> 0001080: bae3 2a9a 2646 0a0b 2f21 3675 38db 980e  ..*.&F../!6u8...
+> 0001090: 489c cacf ab15 fd29 cfbb 4bf2 0ab4 e274  H......)..K....t
+> 00010a0: 08c9 233d c67c b764 0000 0000 0000 0000  ..#=.|.d........

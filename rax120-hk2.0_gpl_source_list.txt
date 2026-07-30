@@ -1,0 +1,546 @@
+1) List the model number. If the open source code archive applies to multiple models, list each model individually.
+rax120-hk2.0
+
+2) List the version number of the firmware/software that correlates with the open source code archive.
+
+RAX120-V1.2.9.52
+
+7) List the main HW platform utilized such as CPU, main chipset, RF chipset, DSP, Switch IC and etc.
+
+IPQ8074A(CPU) + QCA8075(Switch) + IPQ8074(5GHz) + IPQ8074(2.4GHz)
+
+8) List the name, version, license, and modification status of the OS for the product
+Linux kernel 4.4.60, GPL, Yes
+
+9) List the name, version, license, and modification status of the boot loader for the product
+u-boot, 2009.08, GPL, Yes
+
+10) List the name, version, license, and modification status of the toolchain for the product
+gcc, 4.8, GPL, No
+
+11) List the name, version, license, and modification status of the tools for the product
+gmp, 5.1.3, GPLv2, No
+
+mpfr, 3.1.2, GPL, No
+
+mpc, 1.0.2, GPL, No
+
+libelf, 0.8.13, GPL, No
+
+m4, 1.4.17, GPL, No
+
+libtool, 2.4, GPL, No
+
+autoconf, 2.69, GPL, No
+
+automake, 1.15, GPL, No
+
+flex, 2.5.39, GPL, No
+
+bison, 3.0.2, GPL, No
+
+pkg-config, 0.29, GPL, No
+
+sed, 4.2.2, GPL, No
+
+mklibs, 0.1.35, GPL, No
+
+gperf, 3.0.3, GPL, No
+
+sstrip, 1, GPL, No
+
+make-ext4fs, 2015-05-01, GPL, No
+
+e2fsprogs, 1.42.8, GPL, No
+
+mtd-utils, 1.5.1, GPL, No
+
+mkimage, 2014.10, GPL, No
+
+firmware-utils, 1, GPL, No
+
+patch-image, 1, GPL, No
+
+patch, 2.7.5, GPL, No
+
+quilt, 0.63, GPL, No
+
+yaffs2, 2008-12-18, GPL, No
+
+flock, 1, GPL, No
+
+padjffs2, 1, GPL, No
+
+mm-macros, 0.9.7, GPL, No
+
+missing-macros, 10, GPL, No
+
+xz, 5.2.1, Public Domain GPL LGPL, No
+
+cmake, 3.3.2, GPL, No
+
+scons, 2.3.1, GPL, No
+
+bc, 1.06.95, GPL-2.0, No
+
+findutils, 4.4.2, GPL, No
+
+gengetopt, 2.22.6, GPL, No
+
+patchelf, 0.8, GPL, No
+
+ramdump-parser, 2008-12-18, GPL, No
+
+lzma, 4.65, GPL, No
+
+squashfs4, 4.2, GPL, No
+
+coccinelle, 1.0.0-rc24, GPL, No
+
+12) List the name, version, license, and modification status of the application modules for the product
+bc, 1.06.95, GPL-2.0, No
+
+gmp, 6.0.0, GPLv2, No
+
+base-files, 1, GPLv2, No
+
+uboot-envtools, 2014.10, GPL2.0 GPL-2.0+, No
+
+trace-cmd, v2.4.2, GPL-2.0, No
+
+artmtd, 1, DNI, No
+
+attached-devices, 1, DNI, No
+
+auto-detection-tz, 1.0, DNI, No
+
+aws-iot, 36.0, DNI, No
+
+aws-iot-device-sdk, 1.0, Apache, No
+
+armor, armor, Bitdefender, No
+
+base-files_dni, 1, DNI, No
+
+bridge-mode, 1, DNI, No
+
+detcable, 1, DNI, No
+
+detwan, 1.0, GPLv2, No
+
+d2, 0.1.0, Netgear, No
+
+dil, 0.1.0, Netgear, No
+
+disktype, 1, MIT, No
+
+dni-acl, 1, DNI, No
+
+dni-bond, 1, DNI, No
+
+dni-mtdoops, 1, GPLv2, No
+
+dni-ntpclient, 1, GPL-2.0, No
+
+dni-openvpn-client, 1.0, GPLv2, No
+
+dni-ripd, 0.01, DNI, No
+
+busybox, 1.31.1, GPL-2.0, No
+
+dnica-certificates, dni-1, GPLv2, No
+
+dnidnsmasq, 2.78, GPL-2.0, No
+
+dnippp, 2.4.9, BSD, No
+
+dnitoolbox, 0.1, DNI, No
+
+dniutil, 1.0, DNI, No
+
+ez-ipupdate, 3.0.10, GPLv2, No
+
+factory-tools, 1, DNI, No
+
+fw-checking, 1, DNI, No
+
+i2c-pct2075, 1, DNI, No
+
+igmpproxy_dni, 1, GPL-2.0+, No
+
+ipp, 1, GPL-2.0, No
+
+kmod-armor-guster, kmod-armor-guster, Bitdefender, No
+
+kmod-conenat, 1, DNI, No
+
+kmod-dni-qos, 1, DNI, No
+
+kmod-dni_enet, 1, DNI, No
+
+kmod-dnisip, 1, GPLv2, No
+
+kmod-dnshijack, 1, DNI, No
+
+kmod-ipv6-cone, 1, DNI, No
+
+kmod-netgear-reject, 1, GPLv2, No
+
+kmod-pptp-alg, 1, GPLv2, No
+
+kmod-spiadvdos, 1, DNI, No
+
+kmod-spidos, 1, DNI, No
+
+kmod-trigger, 1, GPLv2, No
+
+kmod-urlblock, 1, DNI, No
+
+kmod-xhttp, 1, GPLv2, No
+
+kmod-kcode, 1, Kcode, No
+
+led-control, 1, DNI, No
+
+lighttpd, 1.4.56, BSD, No
+
+lltd, 0.1, MICROSOFT WINDOWS RALLY PROGRAM LICENSE, No
+
+minidlna, 1.3.0, GPL-2.0, No
+
+miniupnpd, 20070127, BSD, No
+
+mtd-utils, 1.5.0, GPLv2, No
+
+net-cgi, 1, DNI, No
+
+net-util, 1, DNI, No
+
+net-wall, 1, DNI, No
+
+net6conf, 0.2, DNI, No
+
+netgear-integration-api, 1, DNI, No
+
+noip2, 1, GPL-2.0, No
+
+ntgrcrypt, 1.0, Delta, No
+
+ntgrddns, 1, DNI, No
+
+openvpn-easy-rsa_dni, 2013-01-30, GPL-2.0, No
+
+openvpn-miscprogs_dni, 1, DNI, No
+
+openvpn_dni, 2.4.9, GPL-2.0, No
+
+parted, 3.2, GPL, No
+
+phddns, 1, GPLv2, No
+
+pot, 1, GPLv2, No
+
+ppp-nas, 1, GPL-2.0, No
+
+proccgi, 1, GPLv2, No
+
+proftpd, 1.3.5, GPLv2, No
+
+radardetect, 1, DNI, No
+
+radvd, 1.5, BSD, No
+
+rp-pppoe, 3.15, LGPL, No
+
+samba, 4.6.4, GPL, No
+
+samba-scripts, 1.0.0, DNI, No
+
+ssmtp, 2.64, GPL-2.0, No
+
+telnetenable, 1, GPLv2, No
+
+trafficmeter, 1, DNI, No
+
+udhcp, 0.9.8, GPLv2, No
+
+utelnetd, 0.1.9, GPLv2, No
+
+wget, 1.17.1, GPL, No
+
+wide-dhcpv6, 20080615, BSD, No
+
+wlan-common, 2.5, DNI, No
+
+qca-nss-cfi, 1, Atheros, No
+
+qca-nss-clients, 1, Atheros, No
+
+qca-nss-crypto, 1, Atheros, No
+
+qca-nss-dp, 1, Atheros, No
+
+qca-nss-drv, 1, Dual BSD/GPL, No
+
+qca-nss-ecm, 1, Dual BSD/GPL, No
+
+qca-nss-macsec, 1, Atheros, No
+
+bridge-utils, 1.5, GPL-2.0, No
+
+cryptsetup, 2.0.5, LGPL-2.1, No
+
+ethtool, 3.18, GPL-2.0, No
+
+jansson, 2.7, MIT, No
+
+node, v0.12.7, MIT, No
+
+stress, 1.0.4, GPL, No
+
+tar, 1.28, GPL, No
+
+zip, 3.0, BSD, No
+
+pm-utils, 1.4.1, GPLv2, No
+
+ftm, 1, Atheros, No
+
+qca-mcs-lkm, gf1273f5, Atheros, No
+
+nat46, 6, GPL-2.0, No
+
+ndppd, 0.2.5, GPL, No
+
+shortcut-fe, 1, Dual BSD/GPL, No
+
+simulated-driver, 1, Dual BSD/GPL, No
+
+qca-ssdk, 1, Dual BSD/GPL, No
+
+qca-ssdk-shell, 1, Dual BSD/GPL, No
+
+ocf-crypto-headers, 20110720, BSD, No
+
+firewall, 2015-07-27, ISC, No
+
+swconfig, 1, GPL-2.0, No
+
+6rd, 9, GPL-2.0, No
+
+ds-lite, 7, GPL-2.0, No
+
+map, 4, GPL-2.0, No
+
+arptables, 0.0.4, GPL-2.0, No
+
+ebtables, 2.0.10-4, GPL-2.0, No
+
+iperf, 2.0.5, BSD, No
+
+strace, 4.8, BSD, No
+
+perf, 4.4.60, GPLv2, No
+
+iproute2, 4.0.0, GPL-2.0, No
+
+ipset, 6.24, GPL-2.0, No
+
+iputils, 20101006, GPL-2.0+, No
+
+iw, 4.14, GPL-2.0, No
+
+linux-atm, 2.5.2, GPL-2.0+, No
+
+resolveip, 1, GPL-2.0, No
+
+tcpdump, 4.9.3, BSD, No
+
+xtables-addons, 2.10, GPL-2.0, No
+
+qsdk-wifi-script, 1, DNI, No
+
+fstools, 2016-01-10, GPL-2.0, No
+
+mtd, 1, GPL-2.0+, No
+
+opkg, 1, GPLv2, No
+
+procd, 2015-10-29.1, GPL-2.0, No
+
+ubox, 2015-11-22, GPL-2.0, No
+
+usign, 2015-05-08, ISC, No
+
+jsonfilter, 2014-06-19, ISC, No
+
+squashfs4, 4.2, GPLv2, No
+
+ubi-utils, 1.5.1, GPLv2, No
+
+dosfstools, 3.0.28, GPL, No
+
+linuxptp, 2.0, GPL-2.0, No
+
+remserial, 1.4, GPL-2.0, No
+
+shadow, 4.2.1, BSD, No
+
+mdadm, 3.2.5, GPLv2, No
+
+13) List the name, version, license, and modification status of the library modules for the product
+
+binutils, 2.24, GPL, No
+
+datalib, 1.0, DNI, No
+
+dni-libmtd, 1, GPL-2.0, No
+
+heimdal, 1.5.3, BSD, No
+
+lib-dni-common-api, 0.1, DNI, No
+
+safeclib, 3.3, MIT, No
+
+avahi, 0.8, LGPL, No
+
+db47, 4.7.25, Sleepycat, No
+
+dbus, 1.9.14, AFL-2.1, No
+
+expat, 2.2.4, MIT, No
+
+ffmpeg, 4.3.2, LGPL, No
+
+file, 5.25, BSD, No
+
+flac, 1.3.1, LGPL, No
+
+gdbm, 1.11, GPL, No
+
+gdb, 7.8, GPL, No
+
+glib2, 2.44.1, GPLv2, No
+
+libcap, 2.24, GPL-2.0, No
+
+libdaemon, 0.14, GPLv2, No
+
+libexif, 0.6.21, LGPL, No
+
+libffi, 3.0.13, MIT, No
+
+libgcrypt, 1.6.6, GPLv2.1, No
+
+libgpg-error, 1.12, LGPL-2.1, No
+
+libid3tag, 0.15.1b, GPLv2, No
+
+libjpeg, 9a, IJG, No
+
+libogg, 1.3.2, BSD, No
+
+libplist, 1.13, LGPL, No
+
+libsearpc, 3.1.7, GPLv2, No
+
+libvorbis, 1.3.7, BSD, No
+
+libxml2, 2.9.2, MIT, No
+
+lvm2, 2.02.119, LGPL, No
+
+lxc, 1.1.3, LGPL, No
+
+pcre, 8.39, BSD, No
+
+sqlite3, 3340000, PUBLICDOMAIN, No
+
+xz, 5.2.1, Public Domain GPL LGPL, No
+
+libtcmd, 1, Atheros, No
+
+gettext, 1, GPL, No
+
+gettext-full, 0.19.6, GPL, No
+
+libevent2, 2.1.12, BSD, No
+
+libiconv, 1, LGPL, No
+
+libiconv-full, 1.11.1, LGPL, No
+
+libjson-c, 0.12, MIT, No
+
+libmnl, 1.0.3, LGPL, No
+
+libnl, 3.2.21, LGPL, No
+
+libnl-tiny, 0.1, LGPL, No
+
+libpcap, 1.8.1, BSD, No
+
+libreadline, 6.3, GPL, No
+
+librpc, 2015-11-04, LGPL, No
+
+libubox, 2015-11-08, ISC, No
+
+alsa-lib, 1.0.28, LGPLv2.1 GPLv2, No
+
+attr, 20150220, LGPL, No
+
+elfutils, 0.161, GPLv2, No
+
+lrzsz, 0.12.20, GPL-2.0, No
+
+argp-standalone, 1.3, LGPL, No
+
+lzo, 2.10, GPL-2.0+, No
+
+ncurses, 5.9, MIT, No
+
+nghttp2, 1.29.0, MIT, No
+
+openssl, 1, OpenSSL, No
+
+popt, 1.16, MIT, No
+
+sysfsutils, 2.1.0, LGPL, No
+
+toolchain, 1, GPLv2, No
+
+uclibc++, 0.2.4, LGPL, No
+
+zlib, 1.2.11, Zlib, No
+
+curl, 7.74.0, MIT, No
+
+iptables, 1.4.21, GPL-2.0, No
+
+wireless-tools, 29, GPL-2.0, No
+
+ubus, 2015-05-25, LGPL, No
+
+uci, 1, LGPL, No
+
+bzip2, 1.0.6, GPLv2, No
+
+e2fsprogs, 1.42.12, GPL-2.0, No
+
+lua, 5.1.5, MIT, No
+
+util-linux, 2.25.2, GPL-2.0, No
+
+mapcalc, 1, GPLv2, No
+
+python, 1, PSF, No
+
+dni_at, 3.1.13, GPL, No
+
+dniquagga, 1.1.1, GPL-2.0, No
+
+ppp, 2.4.7, BSD, No
+
+libpng, 1.2.56, Libpng GPLv2 BSD, No
+

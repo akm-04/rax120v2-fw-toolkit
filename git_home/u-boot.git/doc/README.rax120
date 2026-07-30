@@ -1,0 +1,17 @@
+How to build:
+=============
+
+# ToolChain
+1. got from "$qsdk/staging_dir/toolchain-arm_cortex-a7_gcc-5.2.0_musl-1.1.16_eabi"
+
+# Please set following according to your toolchain
+$ export PATH="/PATH/TO/toolchain-arm_cortex-a7_gcc-5.2.0_musl-1.1.16_eabi/bin:$PATH"
+
+# (optional) Supress "STAGING_DIR" warning messages only
+$ export STAGING_DIR="/PATH/TO/toolchain-arm_cortex-a7_gcc-5.2.0_musl-1.1.16_eabi/.."
+
+# build ax6000 u-boot :
+$ make hw29765589p0p512p1024p4x4p8x8_defconfig
+$ VERSION_CODE='Chaos Calmer 15.05.1' REVISION='95bec74+r49254' make V=1 HOSTSTRIP=true CROSS_COMPILE=arm-openwrt-linux-muslgnueabi- TARGETCC=arm-openwrt-linux-muslgnueabi-gcc KCPPFLAGS="" all
+$ cp u-boot openwrt-ipq807x-u-boot.elf
+$ sstrip openwrt-ipq807x-u-boot.elf

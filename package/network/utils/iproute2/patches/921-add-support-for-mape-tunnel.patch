@@ -1,0 +1,293 @@
+diff --git a/include/linux/if_tunnel.h b/include/linux/if_tunnel.h
+index 102ce7a..505eaed 100644
+--- a/include/linux/if_tunnel.h
++++ b/include/linux/if_tunnel.h
+@@ -57,6 +57,8 @@ enum {
+ 	IFLA_IPTUN_ENCAP_FLAGS,
+ 	IFLA_IPTUN_ENCAP_SPORT,
+ 	IFLA_IPTUN_ENCAP_DPORT,
++	IFLA_IPTUN_FMRS,
++	IFLA_IPTUN_DRAFT03,
+ 	__IFLA_IPTUN_MAX,
+ };
+ #define IFLA_IPTUN_MAX	(__IFLA_IPTUN_MAX - 1)
+@@ -117,6 +119,20 @@ enum {
+ 
+ #define IFLA_GRE_MAX	(__IFLA_GRE_MAX - 1)
+ 
++enum {
++	IFLA_IPTUN_FMR_UNSPEC,
++	IFLA_IPTUN_FMR_IP6_PREFIX,
++	IFLA_IPTUN_FMR_IP4_PREFIX,
++	IFLA_IPTUN_FMR_IP6_PREFIX_LEN,
++	IFLA_IPTUN_FMR_IP4_PREFIX_LEN,
++	IFLA_IPTUN_FMR_EA_LEN,
++	IFLA_IPTUN_FMR_OFFSET,
++	__IFLA_IPTUN_FMR_MAX,
++};
++#define IFLA_IPTUN_FMR_MAX (__IFLA_IPTUN_FMR_MAX - 1)
++
++
++
+ /* VTI-mode i_flags */
+ #define VTI_ISVTI ((__be16)0x0001)
+ 
+diff --git a/include/linux/ip6_tunnel.h b/include/linux/ip6_tunnel.h
+index 48af63c..e922772 100644
+--- a/include/linux/ip6_tunnel.h
++++ b/include/linux/ip6_tunnel.h
+@@ -19,6 +19,20 @@
+ /* copy fwmark from inner packet */
+ #define IP6_TNL_F_USE_ORIG_FWMARK 0x20
+ 
++/* IPv6 tunnel FMR */
++struct __ip6_tnl_fmr {
++	struct __ip6_tnl_fmr *next; /* next fmr in list */
++	struct in6_addr ip6_prefix;
++	struct in_addr ip4_prefix;
++
++	__u8 ip6_prefix_len;
++	__u8 ip4_prefix_len;
++	__u8 ea_len;
++	__u8 offset;
++};
++
++
++
+ struct ip6_tnl_parm {
+ 	char name[IFNAMSIZ];	/* name of tunnel device */
+ 	int link;		/* ifindex of underlying L2 interface */
+@@ -29,6 +43,8 @@ struct ip6_tnl_parm {
+ 	__u32 flags;		/* tunnel flags */
+ 	struct in6_addr laddr;	/* local tunnel end-point address */
+ 	struct in6_addr raddr;	/* remote tunnel end-point address */
++	struct __ip6_tnl_fmr *fmrs;     /* FMRs */
++	__u8 draft03;		/* draft03 */
+ };
+ 
+ struct ip6_tnl_parm2 {
+@@ -41,6 +57,8 @@ struct ip6_tnl_parm2 {
+ 	__u32 flags;		/* tunnel flags */
+ 	struct in6_addr laddr;	/* local tunnel end-point address */
+ 	struct in6_addr raddr;	/* remote tunnel end-point address */
++	struct __ip6_tnl_fmr *fmrs;     /* FMRs */
++	__u8 draft03;		/* draft03 */
+ 
+ 	__be16			i_flags;
+ 	__be16			o_flags;
+diff --git a/ip/ip6tunnel.c b/ip/ip6tunnel.c
+index 62a8240..34576ee 100644
+--- a/ip/ip6tunnel.c
++++ b/ip/ip6tunnel.c
+@@ -42,8 +42,18 @@
+ 
+ #define DEFAULT_TNL_HOP_LIMIT	(64)
+ 
++extern struct rtnl_handle rth;
+ static void usage(void) __attribute__((noreturn));
+ 
++struct iptun_req {
++		struct nlmsghdr 	n;
++		struct ifinfomsg	i;
++		char   			buf[1024];
++};
++
++static void do_add_map_fmrs(struct iptun_req *req, struct ip6_tnl_parm *p);
++
++
+ static void usage(void)
+ {
+ 	fprintf(stderr, "Usage: ip -f inet6 tunnel { add | change | del | show } [ NAME ]\n");
+@@ -66,6 +76,67 @@ static void usage(void)
+ 	exit(-1);
+ }
+ 
++static void free_fmrs_list(struct __ip6_tnl_fmr **fmrs)
++{
++	struct __ip6_tnl_fmr *c, *cur_p = *fmrs;
++
++	for (c = *fmrs; cur_p;) {
++		cur_p = c->next;
++		free(c);
++		c = cur_p;
++	}
++	*fmrs = NULL;
++}
++
++/* rule_list = 2001:1::/32,10.10.0.0/16,26,4|2001:2::/32,10.20.0.0/16,26,4.....
++ * v6prefix/v6prefixlen,v4prefix/v4prefixlen,ealen,offset */
++void parse_fmrs_rules(struct __ip6_tnl_fmr **fmrs, char *rule_list_p)
++{
++	struct __ip6_tnl_fmr *fmrs_each_p = *fmrs, *rule_p = NULL;
++	char *rule_each_p = NULL, *list_p = rule_list_p;
++	char v6pre[64] = {0}, v4pre[32] = {0};
++	int v6plen = 0, v4plen = 0, ealen = 0, offset = 0, num = 0;
++	inet_prefix faddr;
++
++	while ((rule_each_p = strsep(&list_p, "|")) != NULL)
++	{
++		num = sscanf(rule_each_p, "%[^/]/%d,%[^/]/%d,%d,%d", v6pre, &v6plen, v4pre, &v4plen, &ealen, &offset);
++		if (num != 6)
++		{
++			fprintf(stderr, "get value failed, num=%d\n", num);
++			return;
++		}
++		fprintf(stderr, "get one rule: %s/%d,%s/%d, %d,%d\n", v6pre, v6plen, v4pre, v4plen, ealen, offset);
++		rule_p = (struct __ip6_tnl_fmr *)calloc(1, sizeof(struct __ip6_tnl_fmr));
++		get_prefix(&faddr, v6pre, preferred_family);
++		if (faddr.family == AF_UNSPEC)
++			invarg("\"remote\" address family is AF_UNSPEC", v6pre);
++		memcpy(&rule_p->ip6_prefix, &faddr.data, sizeof(struct in6_addr));
++		get_prefix(&faddr, v4pre, AF_INET);
++		if (faddr.family == AF_UNSPEC)
++			invarg("\"remote\" address family is AF_UNSPEC", v4pre);
++		memcpy(&rule_p->ip4_prefix, &faddr.data, sizeof(struct in_addr));
++
++		rule_p->ip6_prefix_len = v6plen;
++		rule_p->ip4_prefix_len = v4plen;
++		rule_p->ea_len = ealen;
++		rule_p->offset = offset;
++		if (*fmrs == NULL)
++		{
++			*fmrs = rule_p;
++			fmrs_each_p = *fmrs;
++		}
++		else
++		{
++			fmrs_each_p->next = rule_p;
++			fmrs_each_p = rule_p;
++		}
++	}
++
++	return;
++}
++
++
+ static void print_tunnel(struct ip6_tnl_parm2 *p)
+ {
+ 	char remote[64];
+@@ -283,7 +354,29 @@ static int parse_args(int argc, char **argv, int cmd, struct ip6_tnl_parm2 *p)
+ 			p->i_flags |= GRE_CSUM;
+ 		} else if (strcmp(*argv, "ocsum") == 0) {
+ 			p->o_flags |= GRE_CSUM;
+-		} else {
++		} else if (strcmp(*argv, "fmrs") == 0)
++		{
++			NEXT_ARG();
++			char *rule_list_p = (char *)calloc(strlen(*argv) + 1, sizeof(char));
++			if (!rule_list_p)
++			{
++				fprintf(stderr,"Calloc memory for FMRS failed, OOM");
++				exit(-1);
++			}
++			strncpy(rule_list_p, *argv, strlen(*argv));
++			parse_fmrs_rules(&p->fmrs, rule_list_p);
++
++			free(rule_list_p);
++
++		} else if (strcmp(*argv, "draft03") == 0)
++		{
++			NEXT_ARG();
++			__u8 uval;
++			if (get_u8(&uval, *argv, 0) < -1)
++				invarg("invalid draft03", *argv);
++			p->draft03 = uval;
++		}
++	    else {
+ 			if (strcmp(*argv, "name") == 0) {
+ 				NEXT_ARG();
+ 			}
+@@ -486,6 +579,81 @@ static int do_del(int argc, char **argv)
+ 	return tnl_del_ioctl(basedev, p.name, &p);
+ }
+ 
++static int do_addmape(int argc, char **argv)
++{
++	struct iptun_req req; 
++	inet_prefix prefix;
++	uint32_t label = 0xffffffffUL;
++	//char *p = NULL;
++	//char *l = NULL;        
++
++	struct ip6_tnl_parm2 p;
++
++	memset(&req, 0, sizeof(req));
++	memset(&prefix, 0, sizeof(prefix));
++	req.n.nlmsg_type = RTM_NEWLINK;
++	req.n.nlmsg_len = NLMSG_LENGTH(sizeof(struct ifinfomsg));
++	req.n.nlmsg_flags = NLM_F_REQUEST | NLM_F_CREATE | NLM_F_REPLACE;
++	req.i.ifi_family = preferred_family;
++
++	ip6_tnl_parm_init(&p, 1);
++
++	if (parse_args(argc, argv, SIOCADDTUNNEL, &p) < 0)
++		return -1;
++
++
++	addattrstrz(&req.n, 1024, IFLA_IFNAME, p.name);
++	if (p.link)
++		addattr32(&req.n, 1024, IFLA_LINK, p.link);
++
++	struct rtattr *linkinfo = addattr_nest(&req.n, sizeof(req), IFLA_LINKINFO);
++	addattrstrz(&req.n, 1024, IFLA_INFO_KIND, "ip6tnl");
++	
++	struct rtattr *infodata = addattr_nest(&req.n, sizeof(req), IFLA_INFO_DATA);
++	if (p.link)
++		addattr32(&req.n, 1024, IFLA_IPTUN_LINK, p.link);
++	
++	addattr8(&req.n, sizeof(req), IFLA_IPTUN_PROTO, IPPROTO_IPIP);
++	addattr8(&req.n, sizeof(req), IFLA_IPTUN_TTL, (p.hop_limit) ? p.hop_limit : 64);
++	addattr8(&req.n, sizeof(req), IFLA_IPTUN_ENCAP_LIMIT, 4);
++	addattr8(&req.n, sizeof(req), IFLA_IPTUN_DRAFT03, p.draft03);
++
++	addattr_l(&req.n, sizeof(req), IFLA_IPTUN_LOCAL, &p.laddr, sizeof(p.laddr));
++	addattr_l(&req.n, sizeof(req), IFLA_IPTUN_REMOTE, &p.raddr, sizeof(p.raddr));
++
++	do_add_map_fmrs(&req, &p);
++
++	addattr_nest_end(&req.n, infodata);
++	addattr_nest_end(&req.n, linkinfo);
++	
++	ll_init_map(&rth);
++
++	if (rtnl_talk(&rth, &req.n, 0, 0, NULL) < 0)
++		exit(2);
++
++	free_fmrs_list(&p.fmrs);	
++	return 0;
++}
++
++static void do_add_map_fmrs(struct iptun_req *req, struct ip6_tnl_parm *p)
++{
++	struct rtattr *fmrs = addattr_nest(&req->n, sizeof(*req), IFLA_IPTUN_FMRS);
++	struct __ip6_tnl_fmr *c;
++	int fmrcnt = 0;
++	for (c = p->fmrs; c; c = c->next) {
++		struct rtattr *rule = addattr_nest(&req->n, sizeof(*req), ++fmrcnt);
++		addattr_l(&req->n, sizeof(*req), IFLA_IPTUN_FMR_IP6_PREFIX, &c->ip6_prefix, sizeof(struct in6_addr));
++		addattr_l(&req->n, sizeof(*req), IFLA_IPTUN_FMR_IP4_PREFIX, &c->ip4_prefix, sizeof(struct in_addr));
++		addattr8(&req->n, sizeof(*req), IFLA_IPTUN_FMR_IP6_PREFIX_LEN, c->ip6_prefix_len);
++		addattr8(&req->n, sizeof(*req), IFLA_IPTUN_FMR_IP4_PREFIX_LEN, c->ip4_prefix_len);
++		addattr8(&req->n, sizeof(*req), IFLA_IPTUN_FMR_EA_LEN, c->ea_len);
++		addattr8(&req->n, sizeof(*req), IFLA_IPTUN_FMR_OFFSET, c->offset);
++		addattr_nest_end(&req->n, rule);
++	}
++	addattr_nest_end(&req->n, fmrs);
++}
++
++
+ int do_ip6tunnel(int argc, char **argv)
+ {
+ 	switch (preferred_family) {
+@@ -512,6 +680,8 @@ int do_ip6tunnel(int argc, char **argv)
+ 			return do_show(argc - 1, argv + 1);
+ 		if (matches(*argv, "help") == 0)
+ 			usage();
++		if (matches(*argv, "addmape") == 0)
++			return do_addmape(argc - 1, argv + 1);
+ 	} else
+ 		return do_show(0, NULL);
+ 
+-- 
+2.7.4
+

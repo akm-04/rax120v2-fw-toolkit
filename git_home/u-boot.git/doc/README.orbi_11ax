@@ -1,0 +1,39 @@
+How to build:
+=============
+
+Developed based on QCA "qsdk-ipq807x.ilq.9.0-spf.9.0.es".
+
+# ToolChain
+1. got from "$qsdk/staging_dir/toolchain-arm_cortex-a7_gcc-5.2.0_musl-1.1.16_eabi/
+
+# Please set following according to your toolchain
+$ export PATH="/PATH/TO/toolchain-arm_cortex-a7_gcc-5.2.0_musl-1.1.16_eabi/bin:$PATH"
+
+# (optional) Supress "STAGING_DIR" warning messages only
+$ export STAGING_DIR="/PATH/TO/toolchain-arm_cortex-a7_gcc-5.2.0_musl-1.1.16_eabi/.."
+
+# build orbi ax u-boot :
+$ make hw29765960p0p4000p1000p4x4p4x4p4x4_defconfig
+$ VERSION_CODE='Chaos Calmer 15.05.1' REVISION='unknown' make V=1 HOSTSTRIP=true CROSS_COMPILE=arm-openwrt-linux-muslgnueabi- TARGETCC=arm-openwrt-linux-muslgnueabi-gcc KCPPFLAGS="" CONFIG_QCA_SINGLE_IMG_GIT="/PATH/TO/git-home/qsdk-chipcode.git" all
+
+
+U-Boot images are : uboot-hw29765960p0p4000p1000p4x4p4x4p4x4.img
+
+Steps to upgrade uboot "uboot-xxx.img" :
+=============================================
+IPQ807x# setenv machid 8010000
+IPQ807x# setenv ipaddr 192.168.1.1 && setenv serverip 192.168.1.10
+IPQ807x# tftpboot 0x42000000 uboot-xxx.img
+IPQ807x# crc32 0x42000000 ${filesize}
+IPQ807x# imgaddr=0x42000000 && source $imgaddr:script
+IPQ807x# reset
+IPQ807x# delenv
+
+Steps to upgrade uboot by DNI command
+======================================
+IPQ807x# setenv uboot_name FILE_NAME
+IPQ807x# setenv ipaddr 192.168.1.1 && setenv serverip 192.168.1.10
+IPQ807x# upgrade_uboot
+IPQ807x# reset
+IPQ807x# delenv
+

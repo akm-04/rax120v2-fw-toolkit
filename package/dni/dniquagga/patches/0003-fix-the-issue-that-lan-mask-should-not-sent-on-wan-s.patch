@@ -1,0 +1,83 @@
+From 3649125e15412169fc78dcdf18f39164d39ea52e Mon Sep 17 00:00:00 2001
+From: "boxiang.chen" <boxiang.chen@dniserver.dnish.net>
+Date: Wed, 19 Aug 2020 13:32:45 +0800
+Subject: [PATCH] fix the issue that lan mask should not sent on wan side
+
+---
+ ripd/ripd.c | 46 ++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 44 insertions(+), 2 deletions(-)
+
+diff --git a/ripd/ripd.c b/ripd/ripd.c
+index 9bcca88..092170b 100644
+--- a/ripd/ripd.c
++++ b/ripd/ripd.c
+@@ -2075,14 +2075,56 @@ rip_read (struct thread *t)
+   return len;
+ }
+ 
++int get_lan_ipaddr(char *lan_name, char *lan_ip_mask)
++{
++	int fd, ret;
++	struct ifreq ip_ifr;
++	struct ifreq mask_ifr;
++	struct sockaddr_in *ip_addr = NULL;
++	struct sockaddr_in *net_addr = NULL;
++	struct in_addr lan_net;
++	fd = socket(AF_INET, SOCK_DGRAM, 0);
++	if (fd < 0)
++		return 0;
++
++	memset(&ip_ifr, 0, sizeof(ip_ifr));
++	ip_ifr.ifr_addr.sa_family = AF_INET;
++	strcpy(ip_ifr.ifr_name, lan_name);
++ 	if (ioctl(fd, SIOCGIFADDR, &ip_ifr) == 0) {
++		ip_addr = (struct sockaddr_in *)&ip_ifr.ifr_addr;
++	}
++	memset(&mask_ifr, 0, sizeof(mask_ifr));
++	mask_ifr.ifr_addr.sa_family = AF_INET;
++	strcpy(mask_ifr.ifr_name, lan_name);
++	if (ioctl(fd, SIOCGIFNETMASK, &mask_ifr) == 0) {
++		net_addr = (struct sockaddr_in *)&mask_ifr.ifr_addr;
++	}
++	lan_net.s_addr = (ip_addr->sin_addr.s_addr & net_addr->sin_addr.s_addr);
++	strcpy(lan_ip_mask, inet_ntoa(lan_net));
++	close(fd);
++	return 1;
++}
++
+ /* Write routing table entry to the stream and return next index of
+    the routing table entry in the stream. */
+ static int
+ rip_write_rte (int num, struct stream *s, struct prefix_ipv4 *p,
+-               u_char version, struct rip_info *rinfo)
++               u_char version, struct rip_info *rinfo, struct connected *ifc)
+ {
+   struct in_addr mask;
+ 
++  if(strcmp(ifc->ifp->name, "brwan") == 0)
++    {
++	char pbuf[BUFSIZ] = {0};
++	 char ip_net[32] = {0};
++	 if(get_lan_ipaddr("br0", ip_net) == 1)
++	   {
++	    if(strcmp(inet_ntop(AF_INET, &p->prefix, pbuf, BUFSIZ), ip_net) == 0)
++	      {
++		  return ++num;
++	      } 
++	   }
++   } 
+   /* Write routing table entry. */
+   if (version == RIPv1)
+     {
+@@ -2385,7 +2427,7 @@ rip_output_process (struct connected *ifc, struct sockaddr_in *to,
+           }
+         
+ 	/* Write RTE to the stream. */
+-	num = rip_write_rte (num, s, p, version, rinfo);
++	num = rip_write_rte (num, s, p, version, rinfo, ifc);
+ 	if (num == rtemax)
+ 	  {
+ 	    if (version == RIPv2 && ri->auth_type == RIP_AUTH_MD5)
+-- 
+2.7.4
+

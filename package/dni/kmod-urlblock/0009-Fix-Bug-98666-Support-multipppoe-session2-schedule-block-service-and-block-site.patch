@@ -1,0 +1,100 @@
+--- kmod-urlblock/ipt_urlBlock.c	2019-07-08 14:43:53.672976216 +0800
++++ kmod-urlblock/ipt_urlBlock.c	2019-07-08 14:37:15.688976523 +0800
+@@ -20,6 +20,7 @@
+ #include <linux/netfilter_ipv4/ip_tables.h>
+ #endif
+ #include <linux/tcp.h>
++#include <linux/inetdevice.h>
+ 
+ static char *http_buffer;
+ 
+@@ -138,14 +139,21 @@
+  * "13" is the length of "www.baidu.com" etc, so the keyword length
+  * MUST be less than 256, and "0" means NULL.
+  */
+-static int is_keyword(unsigned char *keyword, unsigned char *url, int urlen)
++//static int is_keyword(unsigned char *keyword, unsigned char *url, int urlen)
++static int is_keyword(unsigned char *keyword, unsigned char *url, int urlen, bool session2)
+ {
+ 	int i, len;
++	int len2 = 0;
+ 	unsigned char *p;
+ 	unsigned char *site;
+ 
+ 	p = keyword;
+ 	len = *p++;
++	if(len == 0)
++	{
++		len2 = *p++;
++		len = len2;
++	}
+ 	while (len) {
+ 		site = url;
+ 		i = urlen;
+@@ -154,12 +162,20 @@
+ 			/* According spec 2.0: An implementation does a case insensitive
+ 			 * string match for each user-configured keyword in the Original-URL.
+ 			 */
+-			if (!strncasecmp(site, p, len))
+-				return 1;
++			if ((!session2 && !len2) || (session2 && len2))
++			{
++				if (!strncasecmp(site, p, len))
++					return 1;
++			}
+ 			site++;
+ 		}
+ 		p += len;
+ 		len = *p++;
++		if(len == 0)
++		{
++			len2 = *p++;
++			len = len2;
++		}
+ 	}
+ 
+ 	return 0;
+@@ -293,7 +309,7 @@
+ 	else
+ 		blocked =
+ 		    is_keyword(blkinfo->Keyword, (unsigned char *)group,
+-			       grouplen);
++			       grouplen, 0);
+ 
+ 	log_block(group, grouplen, blocked, saddr);
+ 
+@@ -323,6 +339,7 @@
+ 	struct tcphdr _tcph;
+ 	struct ipt_urlBlock_info *blkinfo;
+ 	char *datatmp, *tailtmp;
++	bool session2 = 0;
+ 
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,30)
+ 	const void *matchinfo = par->matchinfo;
+@@ -427,6 +444,17 @@
+ 		oriURL = absolute_URI(reqURI, urilen, host, hostlen, &orilen);
+ 	else
+ 		oriURL = reqURI, orilen = urilen;
++	
++	struct dst_entry *dst = skb_dst(skb);
++	if (likely(dst)){
++		struct net_device *dst_dev = dst->dev;
++		if (likely(dst_dev)) {
++			if(strcmp(dst_dev->name, "ppp1") == 0)
++			{
++				session2 = 1;		
++			}
++		}
++	}
+ 
+ 	blkinfo = (struct ipt_urlBlock_info *)matchinfo;
+ 	if (blkinfo->TrustIP == iph->saddr)
+@@ -434,7 +462,7 @@
+ 	else
+ 		blocked =
+ 		    is_keyword(blkinfo->Keyword, (unsigned char *)oriURL,
+-			       orilen);
++			       orilen, session2);
+ 
+ 	if (host)
+ 		log_block(host, hostlen, blocked, iph->saddr);

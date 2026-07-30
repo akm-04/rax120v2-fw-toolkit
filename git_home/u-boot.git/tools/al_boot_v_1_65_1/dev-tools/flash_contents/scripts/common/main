@@ -1,0 +1,31 @@
+syntax()
+{
+	echo "Usage: create.sh <input directory> <output directory>"
+	echo ""
+	echo "Input directory should include the following files:"
+	for fn in $required_files; do
+		echo "- $fn"
+	done
+}
+
+if [ $# -ne 2 ]; then
+	echo "Invalid arguments!"
+	echo ""
+	syntax
+	exit -1
+fi
+
+input_dir=$1
+output_dir=$2
+
+script_dir=`dirname $0`
+tool_dir=`cd $script_dir/../../; pwd`
+
+if ! requireFiles; then
+	syntax
+	exit -1
+fi
+createImages
+createTOC
+createScript
+createReadme

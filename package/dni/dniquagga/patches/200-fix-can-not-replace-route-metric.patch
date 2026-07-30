@@ -1,0 +1,32 @@
+From f3c0f4f2394a32ebd4490748c669848806d86b62 Mon Sep 17 00:00:00 2001
+From: "zhennan.chen" <zhennan.chen@dniserver.dnish.net>
+Date: Mon, 18 Jan 2021 14:39:22 +0800
+Subject: [PATCH] 2
+
+---
+ ripngd/ripngd.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/ripngd/ripngd.c b/ripngd/ripngd.c
+index baa1112..1b459a6 100644
+--- a/ripngd/ripngd.c
++++ b/ripngd/ripngd.c
+@@ -509,6 +509,15 @@ ripng_ecmp_replace (struct ripng_info *rinfo_new)
+   if (rinfo->metric != RIPNG_METRIC_INFINITY)
+     ripng_aggregate_decrement_list (rp, list);
+ 
++  if (rinfo_new->metric < rinfo->metric)
++	{
++	  struct route_node *tmp_rp = rinfo->rp;
++	  ripng_zebra_ipv6_delete (tmp_rp);
++	  SET_FLAG (rinfo->flags, RIPNG_RTF_CHANGED);
++	  ripng_event (RIPNG_TRIGGERED_UPDATE, 0);
++	  sleep(1);
++	}	
++
+   /* Re-use the first entry, and delete the others. */
+   for (ALL_LIST_ELEMENTS (list, node, nextnode, tmp_rinfo))
+     if (tmp_rinfo != rinfo)
+-- 
+2.7.4
+

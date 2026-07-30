@@ -1,0 +1,63 @@
+From 533831f6912f2cdedd49a3468230bf6a5fb123b8 Mon Sep 17 00:00:00 2001
+From: "zhennan.chen" <zhennan.chen@dniserver.dnish.net>
+Date: Fri, 15 Jan 2021 09:05:58 +0800
+Subject: [PATCH] 2
+
+---
+ ripngd/ripngd.c | 13 ++++++++++---
+ ripngd/ripngd.h |  1 +
+ 2 files changed, 11 insertions(+), 3 deletions(-)
+
+diff --git a/ripngd/ripngd.c b/ripngd/ripngd.c
+index d94bea3..9e2f9b2 100644
+--- a/ripngd/ripngd.c
++++ b/ripngd/ripngd.c
+@@ -420,6 +420,11 @@ ripng_garbage_collect (struct thread *t)
+   /* Get route_node pointer. */
+   rp = rinfo->rp;
+ 
++  /* Delete this route from the kernel. */
++  ripng_zebra_ipv6_delete (rp);
++  UNSET_FLAG (rinfo->flags, RIPNG_RTF_FIB);
++  UNSET_FLAG (rinfo->flags, RIPNG_RTF_GARBAGE);
++
+   /* Unlock route_node. */
+   listnode_delete (rp->info, rinfo);
+   if (list_isempty ((struct list *)rp->info))
+@@ -575,7 +580,7 @@ ripng_ecmp_delete (struct ripng_info *rinfo)
+       RIPNG_TIMER_ON (rinfo->t_garbage_collect,
+                       ripng_garbage_collect, ripng->garbage_time);
+ 
+-      if (ripng_route_rte (rinfo) && CHECK_FLAG (rinfo->flags, RIPNG_RTF_FIB))
++      if (ripng_route_rte (rinfo) && CHECK_FLAG (rinfo->flags, RIPNG_RTF_FIB) && ! CHECK_FLAG (rinfo->flags, RIPNG_RTF_GARBAGE))
+         ripng_zebra_ipv6_delete (rp);
+     }
+ 
+@@ -895,8 +900,10 @@ ripng_route_process (struct rte *rte, struct sockaddr_in6 *from,
+             }
+ 	}
+       else /* same & no change */
+-        ripng_timeout_update (rinfo);
+-
++	  {
++		  SET_FLAG (rinfo->flags, RIPNG_RTF_GARBAGE);
++          ripng_timeout_update (rinfo);
++	  }
+       /* Unlock tempolary lock of the route. */
+       route_unlock_node (rp);
+     }
+diff --git a/ripngd/ripngd.h b/ripngd/ripngd.h
+index 93f6ff1..d81277c 100644
+--- a/ripngd/ripngd.h
++++ b/ripngd/ripngd.h
+@@ -190,6 +190,7 @@ struct ripng_info
+   /* Flags of RIPng route. */
+ #define RIPNG_RTF_FIB      1
+ #define RIPNG_RTF_CHANGED  2
++#define RIPNG_RTF_GARBAGE  0x04
+   u_char flags;
+ 
+   /* Garbage collect timer. */
+-- 
+2.7.4
+

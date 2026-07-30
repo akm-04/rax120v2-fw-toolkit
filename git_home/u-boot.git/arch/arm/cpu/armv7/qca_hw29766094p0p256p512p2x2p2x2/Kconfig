@@ -1,0 +1,6 @@
+if TARGET_HW29766094P0P256P512P2X2P2X2
+
+config QCA_COMMON
+	bool "QCA Common IPs"
+
+endif

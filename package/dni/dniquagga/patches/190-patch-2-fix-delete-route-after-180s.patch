@@ -1,0 +1,32 @@
+From 23ad07ef7e2e53f6f11e0d2dc00d934a03ef56ee Mon Sep 17 00:00:00 2001
+From: "zhennan.chen" <zhennan.chen@dniserver.dnish.net>
+Date: Fri, 15 Jan 2021 19:37:05 +0800
+Subject: [PATCH] 2
+
+---
+ ripngd/ripngd.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/ripngd/ripngd.c b/ripngd/ripngd.c
+index 9e2f9b2..baa1112 100644
+--- a/ripngd/ripngd.c
++++ b/ripngd/ripngd.c
+@@ -607,6 +607,7 @@ ripng_timeout_update (struct ripng_info *rinfo)
+ {
+   if (rinfo->metric != RIPNG_METRIC_INFINITY)
+     {
++	  SET_FLAG (rinfo->flags, RIPNG_RTF_GARBAGE);
+       RIPNG_TIMER_OFF (rinfo->t_timeout);
+       RIPNG_TIMER_ON (rinfo->t_timeout, ripng_timeout, ripng->timeout_time);
+     }
+@@ -901,7 +902,6 @@ ripng_route_process (struct rte *rte, struct sockaddr_in6 *from,
+ 	}
+       else /* same & no change */
+ 	  {
+-		  SET_FLAG (rinfo->flags, RIPNG_RTF_GARBAGE);
+           ripng_timeout_update (rinfo);
+ 	  }
+       /* Unlock tempolary lock of the route. */
+-- 
+2.7.4
+

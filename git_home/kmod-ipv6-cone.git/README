@@ -1,0 +1,14 @@
+SPI Firewall
+Currently we do not do NAT on IPv6, and we assume the router’s LAN has a public IPv6 subnet address. However, an implementation MUST provide the SPI Firewall function on the WAN interface when the connection type is not IPv6 Pass Through or Disabled.
+The SPI firewall tracks all the Internet connections between the LAN and the WAN. Traffic of each connection is identified by the source IP address, destination IP address, and the upper layer protocol type (i.e. the protocol transported by IP). In IPv6, the upper layer protocol type is identified by the first non-Extention-Header-type Next Header value. That is, follow the Next Header thread from the IPv6 header, the first Next Header value that is not an Extension Header value is the protocol type of the IPv6 packet.
+Basically any inbound packet from the WAN port is blocked by the firewall except
+(1)it is destined to the router itself and the router does expect to receive such a packet (e.g. the router is listening on a UDP port which the packet is destined to)
+or
+(2)there exists a connection record and the packet belongs to that connection.
+A connection record, a tuple of (IPS, IPD, Prot, PS), is created when there is an outbound packet from the LAN to the WAN with source IP IPS, destination IP IPD, protocol type Prot, and source port number PS (if Prot = TCP or UDP). For an inbound packet from the WAN to the LAN (source IP IPS’, destination IP IPD’, protocol type Prot', and destination TCP/UDP port number PD), an implementation MUST support the following 2 modes to decide whether the inbound packet belongs the connection (IPS, IPD, Prot, PS).
+(1)Secured Mode
+This is the default mode. The inbound packet (IPS’, IPD’, Prot’, PD’) belongs to the connection (IPS, IPD, Prot, PS) if and only if IPS’ = IPD, IPD’ = IPS, Prot' = Prot, and PD’ = PS if Prot = TCP/UDP (otherwise ignored). This is like the Restricted-Cone filtering mode of IPv4 NAT.
+(2)Open Mode
+The inbound packet (IPS’, IPD’, Prot’, PD’) belongs to the connection (IPS, IPD, Prot, PS) if and only if IPD’ = IPS, Prot' = Prot, and PD’ = PS if Prot = TCP/UDP (otherwise ignored).The source IP IPS’ is not concerned, and this is like the Full-Cone filtering mode of IPv4 NAT.
+A connection record is removed if there is no outbound packet of the connection (i.e. source IP IPS, destination IP IPD, and protocol type Prot) for 30 minutes if Prot = TCP and 5 minutes for other protocols. An implementation MUST support up to 2048 connection records in total (i.e. totally max 2048 records for all different protocols).
+We currently do not provide the function to open doors on the firewall (similar to the Port Forwarding and DMZ functions in IPv4 NAT), but we will support that in future release.

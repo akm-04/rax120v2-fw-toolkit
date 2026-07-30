@@ -1,0 +1,18 @@
+--- noip2/noip2.c	2017-12-07 00:01:01.309886086 +0800
++++ noip2_new/noip2.c	2018-08-13 14:28:50.624606258 +0800
+@@ -683,13 +683,13 @@
+ 	fclose(fp);
+ 	switch(flag) {
+ 		case 1:
+-			syslog(LOG_INFO, "[Dynamic DNS] host name %s registeration successful", host);
++			syslog(LOG_INFO, "[Dynamic DNS] host name %s registration successful", host);
+ 			break;
+ 		case 2:
+ 		case 3:
+ 		case 4:
+ 		case 5:
+-			syslog(LOG_INFO, "[Dynamic DNS] host name %s registeration failure,", host);
++			syslog(LOG_INFO, "[Dynamic DNS] host name %s registration failure,", host);
+ 			break;
+ 	}
+ 	if (flag == 1 || flag == 5)

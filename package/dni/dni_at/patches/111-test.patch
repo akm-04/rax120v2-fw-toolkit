@@ -1,0 +1,11 @@
+diff -Nur at-3.1.13bak/parsetime.h at-3.1.13/parsetime.h
+--- at-3.1.13bak/parsetime.h	2020-10-22 17:03:22.500219084 +0800
++++ at-3.1.13/parsetime.h	2020-10-22 17:04:03.920613436 +0800
+@@ -19,5 +19,7 @@
+ 
+ time_t parsetime(time_t currtime, int argc, char **argv);
+ 
++# define __isleap(year) \
++	((year) % 4 == 0 && ((year) % 100 != 0 || (year) % 400 == 0))
+ extern char *last_token;
+ extern char **my_argv;

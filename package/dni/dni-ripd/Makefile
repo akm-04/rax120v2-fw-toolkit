@@ -1,0 +1,36 @@
+#
+# Copyright (C) 2008 Delta Networks Inc.
+#
+
+include $(TOPDIR)/rules.mk
+
+PKG_NAME:=dni-ripd
+PKG_VERSION:=0.01
+PKG_RELEASE:=1
+PKG_BUILD_DEPENDS:=datalib
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
+
+PKG_GIT_TREEISH:="091baa727f629b68486dc962231b6086cf74f947"
+
+include $(INCLUDE_DIR)/package.mk
+
+define Package/dni-ripd
+  SECTION:=dni
+  CATEGORY:=DNI Packages
+  #DEPENDS:=@TARGET_ipq806x
+  DEPENDS:= +datalib
+  TITLE:=ripd
+endef
+
+define Build/Prepare
+	$(CP) $(GIT_HOME)/dni-ripd.git/* $(PKG_BUILD_DIR)/
+endef
+
+define Build/Compile
+endef
+
+define Package/dni-ripd/install
+	$(CP) -rf $(PKG_BUILD_DIR)/Binary/* $(1)/
+endef
+
+$(eval $(call BuildPackage,dni-ripd))

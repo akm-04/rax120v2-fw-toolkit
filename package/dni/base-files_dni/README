@@ -1,0 +1,8 @@
+# brief desctiption of package "base-files_dni"
+
+Package "base-files_dni" is used to store DNI base-files.
+It will cover the same-name file of "package/base-files/files".
+
+NOTE:
+  1. Please add DNI changes in "package/base-files/base-files_dni"
+  2. Please sync with "package/base-files/files" when upgrade QSDK

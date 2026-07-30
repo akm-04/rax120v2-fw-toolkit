@@ -1,0 +1,35 @@
+From d5386b05904fb3b70a17dc9a98a332cfaf1418ef Mon Sep 17 00:00:00 2001
+From: "boxiang.chen" <boxiang.chen@dniserver.dnish.net>
+Date: Tue, 18 Aug 2020 17:28:12 +0800
+Subject: [PATCH] =?UTF-8?q?implement=20that=20received=20RIP=20packet,=20t?=
+ =?UTF-8?q?he=20metric=20of=20the=20route=20in=20the=20router=E2=80=99s=20?=
+ =?UTF-8?q?routing=20table=20MUST=20add?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ zebra/rt_netlink.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/zebra/rt_netlink.c b/zebra/rt_netlink.c
+index 1a91426..9e4a0c8 100644
+--- a/zebra/rt_netlink.c
++++ b/zebra/rt_netlink.c
+@@ -1721,7 +1721,12 @@ netlink_route_multipath (int cmd, struct prefix *p, struct rib *rib)
+   addattr_l (&req.n, sizeof req, RTA_DST, &p->u.prefix, bytelen);
+ 
+   /* Metric. */
+-  addattr32 (&req.n, sizeof req, RTA_PRIORITY, NL_DEFAULT_ROUTE_METRIC);
++//  addattr32 (&req.n, sizeof req, RTA_PRIORITY, NL_DEFAULT_ROUTE_METRIC);
++
++  /* in spec page 70
++     When an implementation updates its routing table with a route of metric x in a received RIP packet, 
++     the metric of the route in the router’s routing table MUST be x+1. */
++  addattr32 (&req.n, sizeof req, RTA_PRIORITY, rib->metric);
+ 
+   if (rib->mtu || rib->nexthop_mtu)
+     {
+-- 
+2.7.4
+

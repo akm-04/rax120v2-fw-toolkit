@@ -1,0 +1,67 @@
+How to build:
+=============
+
+Developed based on QCA "qsdk-ipq807x.ilq.10.0-spf.10.0.fc".
+
+# ToolChain
+1. got from "$qsdk/staging_dir/toolchain-arm_cortex-a7_gcc-5.2.0_musl-1.1.16_eabi"
+
+# Please set following according to your toolchain
+$ export PATH="/PATH/TO/toolchain-arm_cortex-a7_gcc-5.2.0_musl-1.1.16_eabi/bin:$PATH"
+
+# (optional) Supress "STAGING_DIR" warning messages only
+$ export STAGING_DIR="/PATH/TO/toolchain-arm_cortex-a7_gcc-5.2.0_musl-1.1.16_eabi/.."
+
+# build DR-E834AX2 u-boot :
+$ make hw29766094p0p256p512p2x2p2x2_defconfig
+$ VERSION_CODE='Chaos Calmer 15.05.1' REVISION='95bec74+r49254' make V=1 HOSTSTRIP=true CROSS_COMPILE=arm-openwrt-linux-muslgnueabi- TARGETCC=arm-openwrt-linux-muslgnueabi-gcc KCPPFLAGS="" CONFIG_QCA_SINGLE_IMG_GIT="/PATH/TO/git-home/qsdk-chipcode.git" all
+
+
+U-Boot images are : uboot-hw29766094p0p256p512p2x2p2x2.img
+
+Steps to upgrade uboot "uboot-xxx.img" :
+=============================================
+IPQ807x# setenv machid 801000f
+IPQ807x# setenv ipaddr 192.168.1.1 && setenv serverip 192.168.1.10
+IPQ807x# tftpboot 0x42000000 uboot-xxx.img
+IPQ807x# crc32 0x42000000 ${filesize}
+IPQ807x# imgaddr=0x42000000 && source $imgaddr:script
+IPQ807x# reset
+IPQ807x# delenv
+
+Steps to upgrade uboot by DNI command
+======================================
+IPQ807x# setenv uboot_name FILE_NAME
+IPQ807x# setenv ipaddr 192.168.1.1 && setenv serverip 192.168.1.10
+IPQ807x# upgrade_uboot
+IPQ807x# reset
+IPQ807x# delenv
+
+Steps to upgrade only uboot partition
+======================================
+IPQ807x# setenv ipaddr 192.168.1.1 && setenv serverip 192.168.1.10
+IPQ807x# tftpboot 0x42000000 openwrt-ipq807x-u-boot.mbn
+IPQ807x# nand device 0 && nand erase 0x00d80000 0x00100000
+IPQ807x# nand write $fileaddr 0x00d80000 $filesize
+IPQ807x# reset
+IPQ807x# delenv
+
+Note that nand write file needs to be padded to 4096 boundary.
+prepareSingleImage.py is used to convert u-boot.elf to u-boot.mbn.
+All copies of prepareSingleImage.py in qsdk-chipcode/ dir are identical.
+All copies of elftombn.py in qsdk-chipcode/ dir are identical.
+python elftombn.py -f openwrt-ipq807x-u-boot.elf -o openwrt-ipq807x-u-boot.mbn
+
+==============================================
+important change of spf10.0-es :
+1.
+spf10.0 uboot add a env variable $soc_version_major to determine soc version current board used,
+and uboot will flash different WIFIFW according to soc version , 
+
+for HK1.2 soc , Flashing wififw_ubi_v1 , it can be found at chipcode WLAN.HK.2.0/wlan_proc 
+but for HK2.0 soc , Flashing wififw_ubi_v2 instead , at chipcode WLAN.HK.2.0/wlan_proc_hwv2
+
+2.
+spf10.0 uboot introduce a env variable $force_collect_dump ,
+If the env is set then we will proceed directly with the crashdump collection,
+else we will wait for user input for 10s before going for crashdump collection.

@@ -1,0 +1,42 @@
+--- a/lib/curl_addrinfo.c.bak	2019-11-11 10:55:38.473362958 +0800
++++ b/lib/curl_addrinfo.c	2019-11-11 11:37:35.993482292 +0800
+@@ -98,6 +98,23 @@
+ 
+ 
+ #ifdef HAVE_GETADDRINFO
++int dni_resolv_pass(void)
++{
++#define _PATH_RESCONF	"/etc/resolv.conf"
++
++  struct stat fstat;
++  int ret = 0;
++
++  /*
++   * We return error as EAI_NONAME only.
++   */
++  ret = stat( _PATH_RESCONF, &fstat);
++  if ( !ret){
++    if( fstat.st_size == 0)
++      return EAI_NONAME;
++  }
++  return 0;
++}
+ /*
+  * Curl_getaddrinfo_ex()
+  *
+@@ -128,6 +145,15 @@
+ 
+   *result = NULL; /* assume failure */
+ 
++  /* Figo: fix bug #101331
++   *
++   * In uClibc getaddrinfo() will connection to 0.0.0.0,
++   * when get no DNS server from _PATH_RESCONF
++   */
++  error = dni_resolv_pass();
++  if(error)
++    return error;
++
+   error = getaddrinfo(nodename, servname, hints, &aihead);
+   if(error)
+     return error;

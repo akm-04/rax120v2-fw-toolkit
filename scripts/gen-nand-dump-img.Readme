@@ -1,0 +1,33 @@
+Steps to produce "nand-dump.img" (nand whole flash dump) & "nand-dump.img.mbn" (partition table)
+
+------------------------------------------------
+I. produce "nand-dump.img" (nand whole flash image dump)
+
+a. burn nand-single.img
+	(IPQ) # tftpboot 0x42000000 nand-single.img
+	(IPQ) # crc32 0x42000000 ${filesize}
+
+	(IPQ) # nand erase 0x0 0x10000000
+
+	(IPQ) # imgaddr=0x42000000 && source $imgaddr:script
+	(IPQ) # reset
+
+b. read out the the whole flash (data + OOB)
+	(IPQ) # nand read.raw 0x50000000 0x0 0x20000
+	(IPQ) # tftpput 0x50000000 0x10800000 nand-dump.img
+
+ps.
+  * in nand, a page composed of (0x800 Byte data + 0x40 Byte OOB).
+  * a 256MB (0x10000000) nand
+    . include 0x20000 pages
+    . the raw data size will be (0x800 + 0x40) x 0x20000 = 0x10800000
+
+------------------------------------------------
+II. produce "nand-dump.img.mbn" (nand flash partiton table for nand programmer)
+
+a. edit nand partition config file "gen-nand-dump-img-mbn.conf"
+   please refer to "nand-partition.xml" in qca-chipcode .
+
+b. run
+   $ gen-nand-dump-img-mbn.sh gen-nand-dump-img-mbn.conf nand-dump.img.mbn
+

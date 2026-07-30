@@ -1,0 +1,173 @@
+#common functions for creating images
+#in a separate file so you can create a script with only part
+#all functions assume following variables are valid:
+#images, readyFiles, toc, toc_offset, input_dir, output_dir
+
+#################################################
+#internal functions:
+
+requireFile() {
+	bkifs=$IFS
+	IFS="|" inputArray=( $1 )
+	IFS=$bkifs
+	index=$2
+	reqFile=${inputArray[index]}
+	required_files="$reqFile $required_files"
+	# echo checking: $1
+	if [[ z$reqFile != "z" && ! -f $input_dir/$reqFile ]]; then
+		echo "File \"$reqFile\" not found!"
+		echo ""
+		return 1
+	fi
+	cp $input_dir/$reqFile $output_dir/input/
+
+	return 0
+}
+
+createImage()
+{
+	bkifs=$IFS
+	IFS="|" inputArray=( $1 )
+	IFS=$bkifs
+	outputFile=${inputArray[0]}
+	inputFile=${inputArray[1]}
+	id=${inputArray[2]}
+	loadAddr=${inputArray[3]}
+	execAddr=${inputArray[4]}
+	major=0
+	minor=0
+	fix=0
+	if [ "${inputArray[5]}" != "" ]; then
+		bkifs=$IFS
+		IFS="." verArray=( ${inputArray[5]} )
+		IFS=$bkifs
+		if [ "${verArray[0]}" != "" ]; then
+			major=${verArray[0]}
+		fi
+		if [ "${verArray[1]}" != "" ]; then
+			minor=${verArray[1]}
+		fi
+		if [ "${verArray[2]}" != "" ]; then
+			fix=${verArray[2]}
+		fi
+	fi
+	echo creating "$outputFile"
+	if [ "$id" == "UBOOT_SCRIPT" ]; then
+		mkimage -A arm -OS u-boot -C none -T script -n init_script -d $output_dir/input/$inputFile $output_dir/input/${inputFile}.bin
+		inputFile=${inputFile}.bin
+	fi
+	if [ "$id" == "BOOT_MODE" ]; then
+		xxd -g 1 -r $output_dir/input/$inputFile > $output_dir/input/${inputFile}.bin
+		inputFile=${inputFile}.bin
+	fi
+	$tool_dir/flash_img_obj_create/flash_img_obj_create \
+				--input_file $output_dir/input/$inputFile \
+				--output_file $output_dir/$outputFile \
+				--id $id --load_addr $loadAddr --exec_addr $execAddr \
+				--major $major --minor $minor --fix $fix
+}
+
+safeUpdScriptFor()
+{
+	bkifs=$IFS
+	IFS="|" inputArray=( $1 )
+	IFS=$bkifs
+	imgFile=${inputArray[0]}
+	id=${inputArray[2]}
+	loadAddr=${inputArray[3]}
+	execAddr=${inputArray[4]}
+	echo echo Updating $imgFile..
+	echo tftpboot \$\{tftpdir\}$imgFile\; if test \$\? -ne 0\; then echo Failed!\; exit\; fi
+	echo flash_contents_obj_update $id \$boot_instance_non_active\; if test \$\? -ne 0\; then echo Failed!\; exit\; fi
+	echo flash_contents_obj_validate $id \$boot_instance_non_active\; if test \$\? -ne 0\; then echo Failed!\; exit\; fi
+}
+
+tocArgsFor()
+{
+	bkifs=$IFS
+	IFS="|" inputArray=( $1 )
+	IFS=$bkifs
+	offset=${inputArray[0]}
+	id=${inputArray[1]}
+	instance=${inputArray[2]}
+	name=${inputArray[3]}
+	file=${inputArray[4]}
+	if [[ -z $id ]]; then
+		echo --upto $offset
+		return 0
+	fi
+	output="--id $id --instance $instance --name $name --offset $offset"
+	if [[ ! -z $file ]]; then
+		output="$output --file $output_dir/$file"
+	fi
+	echo $output
+}
+
+#################################################
+#API:
+
+requireFiles()
+{
+	missing=0
+
+	mkdir -p $output_dir/input/
+	for img in ${images[@]}; do
+		if ! requireFile $img 1; then
+			missing=1
+		fi
+	done
+	for fl in ${readyFiles[@]}; do
+		if requireFile $fl 0; then
+			cp $output_dir/input/$fl $output_dir/
+		else
+			missing=1
+		fi
+	done
+
+	if [ "$missing" == "1" ]; then
+		return 1
+	fi
+
+	return 0
+}
+
+createImages()
+{
+	for img in ${images[@]}; do
+		createImage $img
+	done
+}
+
+createTOC()
+{
+	tocargs="--output_file $output_dir/boot.img --toc_offset $toc_offset"
+
+	for entry in ${toc[@]}; do
+		newargs=`tocArgsFor $entry`
+		tocargs="$tocargs $newargs"
+	done
+	echo toc args $tocargs
+	$tool_dir/flash_img_create/flash_img_create $tocargs
+}
+
+createScript()
+{
+	script_name="$output_dir/uboot_script_fw_update.script"
+	echo "\# secure boot script to be used by uboot"> $script_name
+	for img in ${images[@]}; do
+		safeUpdScriptFor $img >> $script_name
+	done
+	echo echo Marking active image... >> $script_name
+	echo flash_contents_instance_invalidate \$boot_instance_active\; if test \$\? -ne 0\; then echo Failed!\; exit\; fi >> $script_name
+	mkimage -A arm -OS u-boot -C none -T script -n "Boot firmware update script" -d $script_name $output_dir/uboot_script_fw_update.bin
+}
+
+createReadme()
+{
+	echo "Created using:" > $output_dir/README
+	echo "$0 $output_dir/input/ $output_dir/" >> $output_dir/README
+	echo "" >> $output_dir/README
+	echo "For safe firmware update, in U-Boot enter:" >> $output_dir/README
+	echo " run fwupd" >> $output_dir/README
+	echo "" >> $output_dir/README
+}

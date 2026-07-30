@@ -1,0 +1,12 @@
+build steps :
+export PATH="/PATH/TO/toolchain-arm_cortex-a7_gcc-5.2.0_musl-1.1.16_eabi/bin:$PATH"
+export STAGING_DIR="/PATH/TO/toolchain-arm_cortex-a7_gcc-5.2.0_musl-1.1.16_eabi/.."
+make hw29766193p0p256p512p2x2p2x2_defconfig
+VERSION_CODE='Chaos Calmer 15.05.1' REVISION='a274c18+r49254' make V=1 HOSTSTRIP=true CROSS_COMPILE=arm-openwrt-linux-muslgnueabi- TARGETCC=arm-openwrt-linux-muslgnueabi-gcc KCPPFLAGS="" CONFIG_QCA_SINGLE_IMG_GIT="/PATH/TO/git-home/qsdk-chipcode.git" all
+
+upgrade steps :
+setenv machid 8030200
+setenv ipaddr 192.168.1.1 && setenv serverip 192.168.1.10
+tftpboot 0x44000000 uboot-hw29766193p0p256p512p2x2p2x2.img 
+imgaddr=0x44000000 && source $imgaddr:script
+reset

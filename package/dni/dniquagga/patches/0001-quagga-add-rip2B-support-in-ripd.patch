@@ -1,0 +1,136 @@
+From 3d8790954bd726d3b61d5935fb39c9cdab7b1ad4 Mon Sep 17 00:00:00 2001
+From: "boxiang.chen" <boxiang.chen@dniserver.dnish.net>
+Date: Thu, 13 Aug 2020 15:09:13 +0800
+Subject: [PATCH] quagga: add rip2B support in ripd
+
+---
+ ripd/rip_interface.c |  6 +++---
+ ripd/rip_main.c      | 11 ++++++-----
+ ripd/ripd.c          |  4 ++--
+ ripd/ripd.h          |  2 ++
+ 4 files changed, 13 insertions(+), 10 deletions(-)
+
+diff --git a/ripd/rip_interface.c b/ripd/rip_interface.c
+index 240c968..339931f 100644
+--- a/ripd/rip_interface.c
++++ b/ripd/rip_interface.c
+@@ -148,7 +148,7 @@ rip_request_interface_send (struct interface *ifp, u_char version)
+   struct sockaddr_in to;
+ 
+   /* RIPv2 support multicast. */
+-  if (version == RIPv2 && if_is_multicast (ifp))
++  if (version == RIPv2 && enable_rip2B == 0)
+     {
+       
+       if (IS_RIP_DEBUG_EVENT)
+@@ -264,7 +264,7 @@ rip_multicast_join (struct interface *ifp, int sock)
+   struct listnode *cnode;
+   struct connected *ifc;
+ 
+-  if (if_is_operative (ifp) && if_is_multicast (ifp))
++  if (if_is_operative (ifp) && enable_rip2B == 0) 
+     {
+       if (IS_RIP_DEBUG_EVENT)
+ 	zlog_debug ("multicast join at %s", ifp->name);
+@@ -296,7 +296,7 @@ rip_multicast_leave (struct interface *ifp, int sock)
+   struct listnode *cnode;
+   struct connected *connected;
+ 
+-  if (if_is_up (ifp) && if_is_multicast (ifp))
++  if (if_is_up (ifp) && enable_rip2B == 0) 
+     {
+       if (IS_RIP_DEBUG_EVENT)
+ 	zlog_debug ("multicast leave from %s", ifp->name);
+diff --git a/ripd/rip_main.c b/ripd/rip_main.c
+index 4ead9b0..34f8d77 100644
+--- a/ripd/rip_main.c
++++ b/ripd/rip_main.c
+@@ -41,6 +41,7 @@
+ static struct option longopts[] = 
+ {
+   { "daemon",      no_argument,       NULL, 'd'},
++  { "enable_rip2B", no_argument,       NULL, 'B'},
+   { "config_file", required_argument, NULL, 'f'},
+   { "pid_file",    required_argument, NULL, 'i'},
+   { "socket",      required_argument, NULL, 'z'},
+@@ -82,8 +83,7 @@ struct zebra_privs_t ripd_privs =
+ char config_default[] = SYSCONFDIR RIPD_DEFAULT_CONFIG;
+ char *config_file = NULL;
+ 
+-/* ripd program name */
+-
++int enable_rip2B = 0;
+ /* Route retain mode flag. */
+ int retain_mode = 0;
+ 
+@@ -194,7 +194,6 @@ main (int argc, char **argv)
+   int dryrun = 0;
+   char *progname;
+   struct thread thread;
+-
+   /* Set umask before anything for security */
+   umask (0027);
+ 
+@@ -204,13 +203,12 @@ main (int argc, char **argv)
+   /* First of all we need logging init. */
+   zlog_default = openzlog (progname, ZLOG_RIP,
+ 			   LOG_CONS|LOG_NDELAY|LOG_PID, LOG_DAEMON);
+-
+   /* Command line option parse. */
+   while (1) 
+     {
+       int opt;
+ 
+-      opt = getopt_long (argc, argv, "df:i:z:hA:P:u:g:rvC", longopts, 0);
++      opt = getopt_long (argc, argv, "dBf:i:z:hA:P:u:g:rvC", longopts, 0);
+     
+       if (opt == EOF)
+ 	break;
+@@ -225,6 +223,9 @@ main (int argc, char **argv)
+ 	case 'f':
+ 	  config_file = optarg;
+ 	  break;
++	case 'B':
++	  enable_rip2B = 1;
++	  break;
+ 	case 'A':
+ 	  vty_addr = optarg;
+ 	  break;
+diff --git a/ripd/ripd.c b/ripd/ripd.c
+index a5bc067..9bcca88 100644
+--- a/ripd/ripd.c
++++ b/ripd/ripd.c
+@@ -2428,7 +2428,7 @@ rip_update_interface (struct connected *ifc, u_char version, int route_type)
+   struct sockaddr_in to;
+ 
+   /* When RIP version is 2 and multicast enable interface. */
+-  if (version == RIPv2 && if_is_multicast (ifc->ifp)) 
++  if (version == RIPv2 && enable_rip2B == 0 ) 
+     {
+       if (IS_RIP_DEBUG_EVENT)
+ 	zlog_debug ("multicast announce on %s ", ifc->ifp->name);
+@@ -2517,7 +2517,7 @@ rip_update_process (int route_type)
+ 	        {
+ 		  if (vsend & RIPv1)
+ 		    rip_update_interface (connected, RIPv1, route_type);
+-		  if ((vsend & RIPv2) && if_is_multicast(ifp))
++		  if ((vsend & RIPv2) )
+ 		    rip_update_interface (connected, RIPv2, route_type);
+ 		}
+ 	    }
+diff --git a/ripd/ripd.h b/ripd/ripd.h
+index 5e87fcd..6a51aa1 100644
+--- a/ripd/ripd.h
++++ b/ripd/ripd.h
+@@ -439,6 +439,8 @@ extern struct rip_info *rip_ecmp_delete (struct rip_info *);
+ /* There is only one rip strucutre. */
+ extern struct rip *rip;
+ 
++extern int enable_rip2B;
++
+ /* Master thread strucutre. */
+ extern struct thread_master *master;
+ 
+-- 
+2.7.4
+

@@ -1,0 +1,12 @@
+diff -ruN ssmtp-2.64-org/ssmtp.c ssmtp-2.64/ssmtp.c
+--- ssmtp-2.64-org/ssmtp.c	2021-10-28 14:14:56.526602346 +0800
++++ ssmtp-2.64/ssmtp.c	2021-10-28 14:15:19.502897314 +0800
+@@ -875,7 +875,7 @@
+ 		char *begin=buf;
+ 		char *rightside;
+ 		/* Make comments invisible */
+-		if((p = strchr(buf, '#'))) {
++		if(buf[0] == '#' && (p = strchr(buf, '#'))) {
+ 			*p = (char)NULL;
+ 		}
+ 

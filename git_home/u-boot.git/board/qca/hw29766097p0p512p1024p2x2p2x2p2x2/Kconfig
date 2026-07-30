@@ -1,0 +1,36 @@
+if TARGET_HW29766097P0P512P1024P2x2P2x2P2x2
+
+config SYS_BOARD
+	default "hw29766097p0p512p1024p2x2p2x2p2x2"
+
+config SYS_VENDOR
+	default "qca"
+
+config SYS_SOC
+	default "qca_hw29766097p0p512p1024p2x2p2x2p2x2"
+
+config SYS_CONFIG_NAME
+	default "hw29766097p0p512p1024p2x2p2x2p2x2"
+
+config IPQ807x_I2C
+	bool "Enable i2c support for ipq807x"
+
+config USB_XHCI_IPQ
+	bool "ipq807x usb support for ipq807x"
+
+config PCI_IPQ
+	bool "ipq807x pci support for ipq807x"
+
+config QCA_AQUANTIA_PHY
+	bool "Enable Aquantia PHY support for ipq807x"
+
+config QCA8033_PHY
+	bool "Enable QCA8033 PHY support for ipq807x"
+
+config QCA8081_PHY
+	bool "Enable QCA8081 PHY support for ipq807x"
+
+config QCA8075_PHY
+	bool "Enable QCA8075 PHY support for ipq807x"
+
+endif
