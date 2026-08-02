@@ -2,8 +2,8 @@
 #
 # 003-add-iperf3.sh
 #
-# Description: Downloads and installs the iperf3 binary, creates an OpenWrt-style
-#              init script, and enables it to auto-start on boot.
+# Description: Copies the local iperf3 binary into the rootfs, creates an
+#              OpenWrt-style init script, and enables it to auto-start on boot.
 # Applied by:  apply_mods.sh (runs in version-sort order via `sort -V`)
 #
 # ==============================================================================
@@ -80,13 +80,9 @@ log_section() {
 # ==============================================================================
 # MODULAR CONFIGURATION
 # ==============================================================================
-# TWO path forms, deliberately kept separate. apply_mods.sh cd's into 
-# ROOTFS_DIR before running this script, so paths used to WRITE FILES DURING 
-# THE BUILD must be relative (no leading slash) or they escape ROOTFS_DIR 
-# entirely and land on the real build machine's filesystem. But paths BAKED 
-# INTO the init script's own content must stay absolute, since that's genuinely 
-# correct once this is running for real on the router's actual root filesystem.
 BIN_NAME="iperf3"
+MOD_SRC_DIR="iperf3"
+SRC_BIN="${MOD_SRC_DIR}/${BIN_NAME}"
 
 TARGET_BIN_REL="usr/bin/$BIN_NAME"            # where THIS script writes, during build
 TARGET_BIN_ABS="/usr/bin/$BIN_NAME"           # what the init script invokes, at runtime
@@ -98,22 +94,20 @@ RC_D_REL="etc/rc.d"
 START_PRIORITY=99
 RC_D_LINK_REL="${RC_D_REL}/S${START_PRIORITY}${BIN_NAME}"
 
-DOWNLOAD_URL="https://github.com/userdocs/iperf3-static/releases/latest/download/iperf3-arm64v8"
-
 # ==============================================================================
 # MAIN LOGIC
 # ==============================================================================
 log_section "Installing and configuring $BIN_NAME"
 info "Running mod: $(basename "$0")..."
 
-# 1. Download and place the binary
-info "Downloading $BIN_NAME binary to ${TARGET_BIN_REL}..."
-mkdir -p "$(dirname "$TARGET_BIN_REL")"
+# 1. Copy and place the binary
+info "Copying $BIN_NAME binary to ${TARGET_BIN_REL}..."
 
-if ! wget -q --show-progress "$DOWNLOAD_URL" -O "$TARGET_BIN_REL"; then
-    fail "Failed to download $BIN_NAME from $DOWNLOAD_URL"
+if [ ! -f "${MODS_DIR}/${SRC_BIN}" ]; then
+    fail "Local binary not found at mods/${SRC_BIN}. Please download it first!"
 fi
 
+copy_mod_file "usr/bin" "$SRC_BIN"
 chmod 0755 "$TARGET_BIN_REL"
 ok "$BIN_NAME binary installed and made executable."
 
