@@ -266,6 +266,7 @@ resolve_stock_fw() {
                 echo "  ${i}) $(basename "$f")"
                 i=$((i+1))
             done
+            echo -e "${DIM}(leave blank and press Enter to type/paste a custom path instead)${NC}"
             local choice
             prompt choice "Select firmware (number)" || return 130
             local idx=$((choice - 1))
